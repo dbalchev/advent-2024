@@ -21,13 +21,14 @@ where
     fn parse_from_reader(reader: &mut BufReader<impl Read>) -> MyResult<A> {
         let mut content = String::new();
         reader.read_to_string(&mut content)?;
-        return Ok(A::from_str(&content)?);
+        Ok(A::from_str(&content)?)
     }
 }
 
 pub struct DaySolution {
-    pub day_no: i32,
-    pub solve: Box<dyn FnOnce(&str) -> MyResult<Vec<u8>>>,
+    pub day_name: &'static str,
+    #[allow(clippy::type_complexity)]
+    pub solve: Box<dyn Fn(&str) -> MyResult<Vec<u8>>>,
 }
 
 fn pretty_print<A: Debug + 'static>(result: MyResult<A>) -> Vec<u8> {
@@ -35,46 +36,46 @@ fn pretty_print<A: Debug + 'static>(result: MyResult<A>) -> Vec<u8> {
     match result {
         Ok(x) => {
             display_buffer
-                .set_color(&ColorSpec::new().set_fg(Some(termcolor::Color::Green)))
+                .set_color(ColorSpec::new().set_fg(Some(termcolor::Color::Green)))
                 .unwrap();
-            display_buffer.write(format!("{:?}", x).as_bytes()).unwrap();
+            display_buffer
+                .write_all(format!("{:?}", x).as_bytes())
+                .unwrap();
         }
         Err(e) => {
             display_buffer
-                .set_color(&ColorSpec::new().set_fg(Some(termcolor::Color::Red)))
+                .set_color(ColorSpec::new().set_fg(Some(termcolor::Color::Red)))
                 .unwrap();
-            display_buffer.write(e.to_string().as_bytes()).unwrap();
+            display_buffer.write_all(e.to_string().as_bytes()).unwrap();
         }
     }
-    return display_buffer.into_inner();
+    display_buffer.into_inner()
 }
 
 pub fn make_day_solution<
     InputFormat: ReadParsable + 'static,
     A: Debug + 'static,
     B: Debug + 'static,
-    F1: FnOnce(&InputFormat) -> MyResult<A> + 'static,
-    F2: FnOnce(&InputFormat) -> MyResult<B> + 'static,
 >(
-    _solution_filename: &str,
-    solve_1: F1,
-    solve_2: F2,
+    solution_filename: &'static str,
+    solve_1: fn(&InputFormat) -> MyResult<A>,
+    solve_2: fn(&InputFormat) -> MyResult<B>,
 ) -> DaySolution {
     DaySolution {
-        day_no: 0,
-        solve: Box::new(|input_filename| {
+        day_name: solution_filename,
+        solve: Box::new(move |input_filename| {
             let input_file = File::open(input_filename)?;
             let input = InputFormat::parse_from_reader(&mut BufReader::new(input_file))?;
             let result_1 = solve_1(&input);
             let result_2 = solve_2(&input);
             let mut display_buffer = Buffer::ansi();
             display_buffer
-                .set_color(&ColorSpec::new().set_fg(Some(termcolor::Color::Yellow)))
+                .set_color(ColorSpec::new().set_fg(Some(termcolor::Color::Yellow)))
                 .unwrap();
             display_buffer.write_all(b"Part 1:\n")?;
             display_buffer.write_all(&pretty_print(result_1))?;
             display_buffer
-                .set_color(&ColorSpec::new().set_fg(Some(termcolor::Color::Yellow)))
+                .set_color(ColorSpec::new().set_fg(Some(termcolor::Color::Yellow)))
                 .unwrap();
             display_buffer.write_all(b"\nPart 2:\n")?;
             display_buffer.write_all(&pretty_print(result_2))?;
