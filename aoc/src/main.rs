@@ -1,18 +1,10 @@
 use std::io::{stdout, Write};
 
-use aoc_utils::{make_day_solution, DaySolution, MyResult};
+use aoc_utils::MyResult;
 use clap::{builder::PossibleValue, CommandFactory, FromArgMatches, Parser, ValueEnum};
+use solutions::make_day_solutions;
 
 mod solutions;
-
-fn make_day_solutions() -> Vec<DaySolution> {
-    use solutions::day_00;
-    vec![make_day_solution(
-        "day_00",
-        day_00::solve_1,
-        day_00::solve_2,
-    )]
-}
 
 #[derive(Clone, Copy, ValueEnum)]
 enum Input {
