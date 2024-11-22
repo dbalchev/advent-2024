@@ -1,3 +1,4 @@
+#![allow(clippy::vec_init_then_push)]
 use aoc_utils::{make_day_solution, DaySolution};
 
 macro_rules! declare_days {
@@ -16,19 +17,22 @@ macro_rules! make_day_solution_item {
     };
 }
 macro_rules! make_day_solution_items {
-    () => {};
-    ($i: ident) => {
-        make_day_solution_item!($i)
+    ($v: ident) => {};
+    ($v: ident, $i: ident) => {
+        $v.push(make_day_solution_item!($i));
     };
-    ($i: ident, $($is:ident),*) => {
-        make_day_solution_item!($i), make_day_solution_items!($($is),*)
+    ($v: ident, $i: ident, $($is:ident),*) => {
+        $v.push(make_day_solution_item!($i));
+        make_day_solution_items!($v, $($is),*)
     };
 }
 macro_rules! register_days {
     ($($is:ident),*) => {
         declare_days! {$($is),*}
         pub fn make_day_solutions() -> Vec<DaySolution> {
-            vec![make_day_solution_items!($($is),*)]
+            let mut result = Vec::new();
+            make_day_solution_items!(result, $($is),*);
+            result
         }
     };
 }
