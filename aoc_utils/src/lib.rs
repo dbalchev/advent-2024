@@ -24,11 +24,19 @@ where
         Ok(A::from_str(&content)?)
     }
 }
-
 pub struct DaySolution {
-    pub day_name: &'static str,
     #[allow(clippy::type_complexity)]
     pub solve: Box<dyn Fn(&str) -> MyResult<Vec<u8>>>,
+    pub canonical_name: &'static str,
+    pub alternative_names: Vec<&'static str>,
+}
+impl Debug for DaySolution {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DaySolution")
+            .field("canonical_name", &self.canonical_name)
+            .field("alternative_names", &self.alternative_names)
+            .finish()
+    }
 }
 
 fn pretty_print<A: Debug + 'static>(result: MyResult<A>) -> Vec<u8> {
@@ -61,8 +69,19 @@ pub fn make_day_solution<
     solve_1: fn(&InputFormat) -> MyResult<A>,
     solve_2: fn(&InputFormat) -> MyResult<B>,
 ) -> DaySolution {
+    let no_rs_sufix = solution_filename.trim_end_matches(".rs");
+    let no_day_prefix = no_rs_sufix.trim_start_matches("day_");
+    let no_leading_digits: &str = no_day_prefix.trim_start_matches("0");
+    let no_leading_digits = if no_leading_digits.is_empty() {
+        "0"
+    } else {
+        no_leading_digits
+    };
+    let mut alternative_names = vec![solution_filename, no_rs_sufix];
+    if no_leading_digits != no_day_prefix {
+        alternative_names.push(no_day_prefix);
+    }
     DaySolution {
-        day_name: solution_filename,
         solve: Box::new(move |input_filename| {
             let input_file = File::open(input_filename)?;
             let input = InputFormat::parse_from_reader(&mut BufReader::new(input_file))?;
@@ -83,6 +102,8 @@ pub fn make_day_solution<
             display_buffer.reset()?;
             Ok(display_buffer.into_inner())
         }),
+        canonical_name: no_leading_digits,
+        alternative_names,
     }
 }
 

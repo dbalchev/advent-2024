@@ -13,7 +13,7 @@ macro_rules! declare_days {
 }
 macro_rules! make_day_solution_item {
     ($i: ident) => {
-        make_day_solution(stringify!($i), $i::solve_1, $i::solve_2)
+        make_day_solution(concat!(stringify!($i), ".rs"), $i::solve_1, $i::solve_2)
     };
 }
 macro_rules! make_day_solution_items {
