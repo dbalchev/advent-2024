@@ -1,18 +1,27 @@
 use aoc_utils::MyResult;
 
-macro_rules! single_read {
-    ($name:ident, $type:ty) => {
-        let $name = read_until_end::<$type>();
+macro_rules! parse_single {
+    (type=$type:ty, str=$expr:expr) => {
+        $type::parse($expr)
     };
-    ($name:ident, $type:ty, $lit:literal) => {
-        let $name = read_until::<$type>($lit);
+    (type=$type:ty, separator=$separator:literal, str=$expr:expr) => {
+        $type::parse_separated($expr, $separator)
+    };
+}
+
+macro_rules! single_read {
+    () => {
+        read_until_end::<$type>()
+    };
+    ($lit:literal) => {
+        read_until($lit)
     };
 }
 
 macro_rules! make_reader {
-    ($struct_name:ident, $($name:ident : $type:ty , $($lit:literal)?),*) => {
+    (struct=$struct_name:ident $(name=$name:ident, type=$type:ty, $(until=$lit:literal)?, $(separator=$separator:literal)?),*) => {
         fn reader() -> $struct_name {
-            $(single_read!($name, $type $(,$lit)?);)*
+            $(let $name = parse_single!(type=$type, $(separator=$separator,)? str=single_read!($($lit)?));)*
             return $struct_name {
                 $($name),*
             }
@@ -26,11 +35,19 @@ macro_rules! formatted_struct {
             $($result)*
         }
     };
-    (struct $struct_name:ident {$($name:ident : $type:ty , $($lit:literal)?),* }) => {
-        formatted_struct!{in_process $struct_name ($($name : $type , $($lit)?),* ) -> ( )}
-        // make_reader!{$struct_name, $($name : $type , $($lit)?),*}
+    (struct $struct_name:ident
+        {
+            $($leading_literal:literal)?
+            $(
+                $(#[separated_by=$separator:literal])?
+                $name:ident : $type:ty ,
+                $($lit:literal)?
+            ),*
+        }) => {
+        formatted_struct!{in_process $struct_name ($($name : $type),* ) -> ( )}
+        // make_reader!{struct=$struct_name $(name=$name, type=$type, $(until=$lit)?, $(separator=$separator)?),*}
     };
-    (in_process $struct_name:ident ($($name:ident : $type:ty , $($lit:literal)?),* ) -> ($($result:tt)*)) => {
+    (in_process $struct_name:ident ($($name:ident : $type:ty),* ) -> ($($result:tt)*)) => {
         formatted_struct!{in_process $struct_name ( )-> ($($result)*  $($name:$type),*  ) }
     };
 
@@ -38,11 +55,14 @@ macro_rules! formatted_struct {
 
 formatted_struct! {
     struct Foo {
-            foo:String,
-            "bz",
-            baz:i32,
-            "bar",
-            bar:i32,
+        "game"
+        foo:String,
+        "bz",
+        #[separated_by=","]
+        baz:Vec<i32>,
+        "bar",
+        bar:i32,
+        "baz"
     }
 }
 
