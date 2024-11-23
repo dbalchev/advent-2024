@@ -40,8 +40,8 @@ macro_rules! formatted_struct {
             $($leading_literal:literal)?
             $(
                 $(#[separated_by=$separator:literal])?
-                $name:ident : $type:ty ,
-                $($lit:literal)?
+                $name:ident : $type:ty
+                $(,$lit:literal)?
             ),*
         }) => {
         formatted_struct!{in_process $struct_name ($($name : $type),* ) -> ( )}
