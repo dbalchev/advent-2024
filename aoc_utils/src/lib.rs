@@ -1,6 +1,7 @@
 use std::error::Error;
 
 mod day_solution;
+mod format_struct;
 mod parsable;
 
 pub use crate::day_solution::{make_day_solution, DaySolution};
