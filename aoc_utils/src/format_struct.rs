@@ -7,7 +7,10 @@ macro_rules! parse_single {
         <$type as $crate::Parsable>::parse($expr)?
     };
     (type=$type:ty, separator=$separator:literal, str=$expr:expr) => {
-        $type::parse_separated($expr, $separator)
+        <$type as $crate::SeparatorParsable>::parse_separated_by(
+            $expr,
+            Regex::new($separator).unwrap(),
+        )?
     };
 }
 
@@ -77,9 +80,9 @@ mod tests {
             "game"
             first:String,
             "bz",
-            // #[separated_by=","]
-            // baz:Vec<i32>,
-            // "bar",
+            #[separated_by=","]
+            bz:Vec<i32>,
+            "bar",
             bar:i32,
             "baz"
         }
@@ -91,11 +94,7 @@ mod tests {
             "game"
             first:String,
             "bz",
-            // #[separated_by=","]
-            // baz:Vec<i32>,
-            // "bar",
             bar:i32,
-            // "baz"
         }
     }
     #[allow(unused_imports)]
@@ -105,11 +104,12 @@ mod tests {
 
     #[test]
     fn parse_leading_inner_and_trailing() -> MyResult<()> {
-        let parsed = TestLeadingInnerAndTrailing::parse("gamef00bz123baz")?;
+        let parsed = TestLeadingInnerAndTrailing::parse("gamef00bz1,2,3bar123baz")?;
         assert_eq!(
             parsed,
             TestLeadingInnerAndTrailing {
                 first: "f00".to_string(),
+                bz: vec![1, 2, 3],
                 bar: 123
             }
         );
