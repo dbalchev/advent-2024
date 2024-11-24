@@ -1,12 +1,12 @@
 use std::{
     fmt::Debug,
     fs::File,
-    io::{BufReader, Write},
+    io::{Read, Write},
 };
 
 use termcolor::{Buffer, ColorSpec, WriteColor};
 
-use crate::{MyResult, ReadParsable};
+use crate::{MyResult, Parsable};
 
 pub struct DaySolution {
     #[allow(clippy::type_complexity)]
@@ -45,7 +45,7 @@ fn pretty_print<A: Debug + 'static>(result: MyResult<A>) -> Vec<u8> {
 }
 
 pub fn make_day_solution<
-    InputFormat: ReadParsable + 'static,
+    InputFormat: Parsable + 'static,
     A: Debug + 'static,
     B: Debug + 'static,
 >(
@@ -67,8 +67,11 @@ pub fn make_day_solution<
     }
     DaySolution {
         solve: Box::new(move |input_filename| {
-            let input_file = File::open(input_filename)?;
-            let input = InputFormat::parse_from_reader(&mut BufReader::new(input_file))?;
+            let mut input_file = File::open(input_filename)?;
+            let mut file_content = String::new();
+            input_file.read_to_string(&mut file_content)?;
+            let file_content = file_content;
+            let input = InputFormat::parse(&file_content)?;
             let result_1 = solve_1(&input);
             let result_2 = solve_2(&input);
             let mut display_buffer = Buffer::ansi();

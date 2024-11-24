@@ -1,8 +1,9 @@
-use aoc_utils::MyResult;
+use aoc_utils::{MyResult, Parsable, ParseBuffer};
+use regex::Regex;
 
 macro_rules! parse_single {
     (type=$type:ty, str=$expr:expr) => {
-        $type::parse($expr)
+        <$type as Parsable>::parse($expr)?
     };
     (type=$type:ty, separator=$separator:literal, str=$expr:expr) => {
         $type::parse_separated($expr, $separator)
@@ -10,32 +11,43 @@ macro_rules! parse_single {
 }
 
 macro_rules! single_read {
-    () => {
-        read_until_end::<$type>()
+    ($buffer:ident) => {
+        $buffer.read_to_end()
     };
-    ($lit:literal) => {
-        read_until($lit)
+    ($buffer:ident, $lit:literal) => {
+        $buffer.read_until(Regex::new($lit).unwrap())?
     };
 }
 
 macro_rules! make_reader {
-    (struct=$struct_name:ident $(name=$name:ident, type=$type:ty, $(until=$lit:literal)?, $(separator=$separator:literal)?),*) => {
-        fn reader() -> $struct_name {
-            $(let $name = parse_single!(type=$type, $(separator=$separator,)? str=single_read!($($lit)?));)*
-            return $struct_name {
-                $($name),*
+    (
+        struct=$struct_name:ident
+        $(leading_literal=$leading_literal:literal)?
+        $(name=$name:ident, type=$type:ty, $(until=$lit:literal)?, $(separator=$separator:literal)?),*
+    ) => {
+        impl Parsable for $struct_name{
+            fn parse(text: &str) -> MyResult<$struct_name> {
+                let mut buffer = ParseBuffer::new(text);
+                $(buffer.skip(Regex::new($leading_literal).unwrap())?)?;
+                $(let $name = parse_single!(type=$type, $(separator=$separator,)? str=single_read!(buffer, $($lit)?));)*
+                Ok($struct_name {
+                    $($name),*
+                })
             }
         }
     }
 }
 
 macro_rules! formatted_struct {
-    (in_process $struct_name:ident ()-> ($($result:tt)*)) => {
+    (in_process $struct_name:ident $(meta=$($struct_meta:meta),*)? ()-> ($($result:tt)*)) => {
+        $(#[$($struct_meta),*])?
         struct $struct_name {
             $($result)*
         }
     };
-    (struct $struct_name:ident
+    (
+        $(#[$($struct_meta:meta),*])?
+        struct $struct_name:ident
         {
             $($leading_literal:literal)?
             $(
@@ -44,23 +56,24 @@ macro_rules! formatted_struct {
                 $(,$lit:literal)?
             ),*
         }) => {
-        formatted_struct!{in_process $struct_name ($($name : $type),* ) -> ( )}
-        // make_reader!{struct=$struct_name $(name=$name, type=$type, $(until=$lit)?, $(separator=$separator)?),*}
+        formatted_struct!{in_process $struct_name $(meta=$($struct_meta),*)? ($($name : $type),* ) -> ( )}
+        make_reader!{struct=$struct_name $(leading_literal=$leading_literal)? $(name=$name, type=$type, $(until=$lit)?, $(separator=$separator)?),*}
     };
-    (in_process $struct_name:ident ($($name:ident : $type:ty),* ) -> ($($result:tt)*)) => {
-        formatted_struct!{in_process $struct_name ( )-> ($($result)*  $($name:$type),*  ) }
+    (in_process $struct_name:ident $(meta=$($struct_meta:meta),*)? ($($name:ident : $type:ty),* ) -> ($($result:tt)*)) => {
+        formatted_struct!{in_process $struct_name $(meta=$($struct_meta),*)? ( )-> ($($result)*  $($name:$type),*  ) }
     };
 
 }
 
 formatted_struct! {
+    #[derive(PartialEq, Eq, Debug)]
     struct Foo {
         "game"
         foo:String,
         "bz",
-        #[separated_by=","]
-        baz:Vec<i32>,
-        "bar",
+        // #[separated_by=","]
+        // baz:Vec<i32>,
+        // "bar",
         bar:i32,
         "baz"
     }
@@ -78,4 +91,21 @@ pub fn solve_1(input: &InputFormat) -> MyResult<String> {
 
 pub fn solve_2(_input: &InputFormat) -> MyResult<String> {
     Err("not implemented")?
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_foo() -> MyResult<()> {
+        let parsed = Foo::parse("gamef00bz123baz")?;
+        assert_eq!(
+            parsed,
+            Foo {
+                foo: "f00".to_string(),
+                bar: 123
+            }
+        );
+        Ok(())
+    }
 }
