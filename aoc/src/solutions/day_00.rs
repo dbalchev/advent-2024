@@ -1,7 +1,12 @@
-use aoc_utils::MyResult;
+use aoc_utils::{formatted_struct, MyResult};
 
 pub type InputFormat = String;
 
+formatted_struct! {
+    struct Foo {
+        foo: String,
+    }
+}
 pub fn solve_1(input: &InputFormat) -> MyResult<String> {
     // let f = Foo {
     //     foo: "x".to_string(),

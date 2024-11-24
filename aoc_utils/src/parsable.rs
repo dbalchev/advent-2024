@@ -8,12 +8,25 @@ pub trait Parsable: Sized {
     fn parse(text: &str) -> MyResult<Self>;
 }
 
+pub trait SeparatorParsable: Sized {
+    fn parse_separated_by(text: &str, separator: Regex) -> MyResult<Self>;
+}
+
 impl<A: FromStr> Parsable for A
 where
     <A as FromStr>::Err: 'static + std::error::Error,
 {
     fn parse(text: &str) -> MyResult<A> {
         Ok(Self::from_str(text)?)
+    }
+}
+
+impl<A: Parsable> SeparatorParsable for Vec<A> {
+    fn parse_separated_by(text: &str, separator: Regex) -> MyResult<Self> {
+        separator
+            .split(text)
+            .map(A::parse)
+            .collect::<MyResult<Vec<A>>>()
     }
 }
 
@@ -82,6 +95,15 @@ mod tests {
         let mut buffer = ParseBuffer::new("foobarbaz");
         assert_eq!(buffer.read_until(Regex::new("bar").unwrap())?, "foo");
         assert_eq!(buffer.read_to_end(), "baz");
+        Ok(())
+    }
+    #[test]
+    fn parse_separated() -> MyResult<()> {
+        let separator = Regex::new(", ").unwrap();
+        assert_eq!(
+            Vec::<i32>::parse_separated_by("1, 2, 3", separator)?,
+            vec![1, 2, 3]
+        );
         Ok(())
     }
 }
