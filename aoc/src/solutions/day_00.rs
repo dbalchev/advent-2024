@@ -23,7 +23,7 @@ macro_rules! make_reader {
     (
         struct=$struct_name:ident
         $(leading_literal=$leading_literal:literal)?
-        $(name=$name:ident, type=$type:ty, $(until=$lit:literal)?, $(separator=$separator:literal)?),*
+        $(name=$name:ident, type=$type:ty {$(until=$lit:literal)? $(separator=$separator:literal)?}),*
     ) => {
         impl Parsable for $struct_name{
             fn parse(text: &str) -> MyResult<$struct_name> {
@@ -57,7 +57,7 @@ macro_rules! formatted_struct {
             ),*
         }) => {
         formatted_struct!{in_process $struct_name $(meta=$($struct_meta),*)? ($($name : $type),* ) -> ( )}
-        make_reader!{struct=$struct_name $(leading_literal=$leading_literal)? $(name=$name, type=$type, $(until=$lit)?, $(separator=$separator)?),*}
+        make_reader!{struct=$struct_name $(leading_literal=$leading_literal)? $(name=$name, type=$type {$(until=$lit)? $(separator=$separator)?}),*}
     };
     (in_process $struct_name:ident $(meta=$($struct_meta:meta),*)? ($($name:ident : $type:ty),* ) -> ($($result:tt)*)) => {
         formatted_struct!{in_process $struct_name $(meta=$($struct_meta),*)? ( )-> ($($result)*  $($name:$type),*  ) }
