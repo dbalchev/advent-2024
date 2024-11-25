@@ -1,5 +1,4 @@
 use aoc_utils::{formatted_struct, MyResult};
-use regex::Regex;
 
 // pub type InputFormat = String;
 

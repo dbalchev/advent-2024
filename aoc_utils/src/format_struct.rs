@@ -1,5 +1,4 @@
 use crate::MyResult;
-use regex::Regex;
 
 #[macro_export]
 macro_rules! parse_single {
@@ -9,7 +8,7 @@ macro_rules! parse_single {
     (type=$type:ty, separator=$separator:literal, str=$expr:expr) => {
         <$type as $crate::SeparatorParsable>::parse_separated_by(
             $expr,
-            Regex::new($separator).unwrap(),
+            $crate::make_regex($separator),
         )?
     };
 }
@@ -20,7 +19,7 @@ macro_rules! single_read {
         $buffer.read_to_end()
     };
     ($buffer:ident, $lit:literal) => {
-        $buffer.read_until(Regex::new($lit).unwrap())?
+        $buffer.read_until($crate::make_regex($lit))?
     };
 }
 
@@ -33,7 +32,7 @@ macro_rules! make_reader_body {
         $(name=$name:ident, type=$type:ty {$(until=$lit:literal)? $(separator=$separator:literal)?}),*
     ) => {
         let mut buffer = $crate::ParseBuffer::new($text);
-        $(buffer.skip(Regex::new($leading_literal).unwrap())?)?;
+        $(buffer.skip($crate::make_regex($leading_literal))?)?;
         $(let $name = $crate::parse_single!(type=$type, $(separator=$separator,)? str=$crate::single_read!(buffer$(, $lit)?));)*
         Ok($constructor_name {
             $($name),*
