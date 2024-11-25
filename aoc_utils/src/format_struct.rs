@@ -45,13 +45,17 @@ macro_rules! make_reader {
 }
 
 #[macro_export]
-macro_rules! formatted_struct {
-    (in_process $struct_name:ident $(meta=$($struct_meta:meta),*)? ()-> ($($result:tt)*)) => {
-        $(#[$($struct_meta),*])?
-        struct $struct_name {
-            $($result)*
+macro_rules! make_item {
+    ($item_type:tt $item_name:ident $(meta=$($item_meta:meta),*)? {$($body_token:tt)*}) => {
+        $(#[$($item_meta),*])?
+        $item_type $item_name {
+            $($body_token)*
         }
     };
+}
+
+#[macro_export]
+macro_rules! formatted_struct {
     (
         $(#[$($struct_meta:meta),*])?
         struct $struct_name:ident
@@ -62,12 +66,10 @@ macro_rules! formatted_struct {
                 $name:ident : $type:ty,
                 $($lit:literal)?
             ),*
-        }) => {
-        formatted_struct!{in_process $struct_name $(meta=$($struct_meta),*)? ($($name : $type),* ) -> ( )}
+        }
+    ) => {
+        $crate::make_item!{struct $struct_name $(meta=$($struct_meta),*)? { $($name:$type),*}}
         $crate::make_reader!{struct=$struct_name $(leading_literal=$leading_literal)? $(name=$name, type=$type {$(until=$lit)? $(separator=$separator)?}),*}
-    };
-    (in_process $struct_name:ident $(meta=$($struct_meta:meta),*)? ($($name:ident : $type:ty),* ) -> ($($result:tt)*)) => {
-        formatted_struct!{in_process $struct_name $(meta=$($struct_meta),*)? ( )-> ($($result)*  $($name:$type),*  ) }
     };
 
 }
