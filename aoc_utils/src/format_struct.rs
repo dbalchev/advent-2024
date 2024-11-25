@@ -60,7 +60,7 @@ macro_rules! formatted_struct {
         $(#[$($struct_meta:meta),*])?
         struct $struct_name:ident
         {
-            $($leading_literal:literal)?
+            $($leading_literal:literal,)?
             $(
                 $(#[separated_by=$separator:literal])?
                 $name:ident : $type:ty,
@@ -71,7 +71,35 @@ macro_rules! formatted_struct {
         $crate::make_item!{struct $struct_name $(meta=$($struct_meta),*)? { $($name:$type),*}}
         $crate::make_reader!{struct=$struct_name $(leading_literal=$leading_literal)? $(name=$name, type=$type {$(until=$lit)? $(separator=$separator)?}),*}
     };
-
+    (
+        $(#[$($enum_meta:meta),*])?
+        enum $enum_name:ident
+        {
+            $(
+                $variant_name:ident {
+                    $($leading_literal:literal,)?
+                    $(
+                        $(#[separated_by=$separator:literal])?
+                        $name:ident : $type:ty,
+                        $($lit:literal)?
+                    ),*
+                },
+            )+
+        }
+    ) => {
+        $crate::make_item!{
+            enum $enum_name $(meta=$($enum_meta),*)?
+            {
+                $(
+                    $variant_name
+                    {
+                        $($name:$type),*
+                    }
+                ),+
+            }
+        }
+        // $crate::make_reader!{struct=$enum_name $(leading_literal=$leading_literal)? $(name=$name, type=$type {$(until=$lit)? $(separator=$separator)?}),*}
+    };
 }
 
 mod tests {
@@ -79,7 +107,7 @@ mod tests {
     formatted_struct! {
         #[derive(PartialEq, Eq, Debug)]
         struct TestLeadingInnerAndTrailing {
-            "game"
+            "game",
             first:String,
             "bz",
             #[separated_by=","]
@@ -93,12 +121,28 @@ mod tests {
     formatted_struct! {
         #[derive(PartialEq, Eq, Debug)]
         struct TestNoTrailing {
-            "game"
+            "game",
             first:String,
             "bz",
             bar:i32,
         }
     }
+
+    formatted_struct! {
+        enum VariantTest {
+            Foo {
+                "foo",
+                bar: String,
+                "baz",
+                bz: i32,
+            },
+            Fiz {
+                "fiz",
+                buz: i32,
+            },
+        }
+    }
+
     #[allow(unused_imports)]
     use super::*;
     #[allow(unused_imports)]
