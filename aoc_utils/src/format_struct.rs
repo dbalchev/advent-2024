@@ -63,6 +63,7 @@ macro_rules! formatted_struct {
                 $name:ident : $type:ty,
                 $($lit:literal)?
             ),*
+            $(,)?
         }
     ) => {
         $crate::make_item!{struct $struct_name vis=($vis) $(meta=$($struct_meta),*)? { $($name:$type),*}}
@@ -90,6 +91,7 @@ macro_rules! formatted_struct {
                         $name:ident : $type:ty,
                         $($lit:literal)?
                     ),*
+                    $(,)?
                 },
             )+
         }
@@ -147,7 +149,7 @@ mod tests {
             bz:Vec<i32>,
             "bar",
             bar:i32,
-            "baz"
+            "baz",
         }
     }
 
@@ -173,6 +175,7 @@ mod tests {
             Fiz {
                 "fiz",
                 buz: i32,
+                "buz"
             },
         }
     }
@@ -221,8 +224,8 @@ mod tests {
     }
     #[test]
     fn parse_enum_variant_2() -> MyResult<()> {
-        let parsed = VariantTest::parse("fiz5")?;
-        assert_eq!(parsed, VariantTest::Fiz { buz: 5 });
+        let parsed = VariantTest::parse("fiz15buz")?;
+        assert_eq!(parsed, VariantTest::Fiz { buz: 15 });
         Ok(())
     }
     #[test]

@@ -13,7 +13,7 @@ formatted_struct! {
         },
         Dash {
             name: String,
-            "-"
+            "-",
         },
     }
 }
