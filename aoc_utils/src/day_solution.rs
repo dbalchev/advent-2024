@@ -70,8 +70,8 @@ pub fn make_day_solution<
             let mut input_file = File::open(input_filename)?;
             let mut file_content = String::new();
             input_file.read_to_string(&mut file_content)?;
-            let file_content = file_content;
-            let input = InputFormat::parse(&file_content)?;
+            let file_content = file_content.trim_end_matches("\n");
+            let input = InputFormat::parse(file_content)?;
             let result_1 = solve_1(&input);
             let result_2 = solve_2(&input);
             let mut display_buffer = Buffer::ansi();

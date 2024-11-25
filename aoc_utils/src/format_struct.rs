@@ -43,9 +43,9 @@ macro_rules! make_reader_body {
 
 #[macro_export]
 macro_rules! make_item {
-    ($item_type:tt $item_name:ident $(meta=$($item_meta:meta),*)? {$($body_token:tt)*}) => {
+    ($item_type:tt $item_name:ident vis=($vis:vis) $(meta=$($item_meta:meta),*)? {$($body_token:tt)*}) => {
         $(#[$($item_meta),*])?
-        $item_type $item_name {
+        $vis $item_type $item_name {
             $($body_token)*
         }
     };
@@ -55,7 +55,7 @@ macro_rules! make_item {
 macro_rules! formatted_struct {
     (
         $(#[$($struct_meta:meta),*])?
-        struct $struct_name:ident
+        $vis: vis struct $struct_name:ident
         {
             $($leading_literal:literal,)?
             $(
@@ -65,7 +65,7 @@ macro_rules! formatted_struct {
             ),*
         }
     ) => {
-        $crate::make_item!{struct $struct_name $(meta=$($struct_meta),*)? { $($name:$type),*}}
+        $crate::make_item!{struct $struct_name vis=($vis) $(meta=$($struct_meta),*)? { $($name:$type),*}}
 
         impl $crate::Parsable for $struct_name{
             fn parse(text: &str) -> MyResult<$struct_name> {
@@ -80,7 +80,7 @@ macro_rules! formatted_struct {
     };
     (
         $(#[$($enum_meta:meta),*])?
-        enum $enum_name:ident
+        $vis:vis enum $enum_name:ident
         {
             $(
                 $variant_name:ident {
@@ -95,7 +95,7 @@ macro_rules! formatted_struct {
         }
     ) => {
         $crate::make_item!{
-            enum $enum_name $(meta=$($enum_meta),*)?
+            enum $enum_name vis=($vis) $(meta=$($enum_meta),*)?
             {
                 $(
                     $variant_name
@@ -139,7 +139,7 @@ mod tests {
 
     formatted_struct! {
         #[derive(PartialEq, Eq, Debug)]
-        struct TestLeadingInnerAndTrailing {
+        pub struct TestLeadingInnerAndTrailing {
             "game",
             first:String,
             "bz",
