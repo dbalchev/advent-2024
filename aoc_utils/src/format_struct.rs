@@ -25,22 +25,19 @@ macro_rules! single_read {
 }
 
 #[macro_export]
-macro_rules! make_reader {
+macro_rules! make_reader_body {
     (
-        struct=$struct_name:ident
+        constructor=$constructor_name:ident
+        text=($text:expr)
         $(leading_literal=$leading_literal:literal)?
         $(name=$name:ident, type=$type:ty {$(until=$lit:literal)? $(separator=$separator:literal)?}),*
     ) => {
-        impl $crate::Parsable for $struct_name{
-            fn parse(text: &str) -> MyResult<$struct_name> {
-                let mut buffer = $crate::ParseBuffer::new(text);
-                $(buffer.skip(Regex::new($leading_literal).unwrap())?)?;
-                $(let $name = $crate::parse_single!(type=$type, $(separator=$separator,)? str=$crate::single_read!(buffer$(, $lit)?));)*
-                Ok($struct_name {
-                    $($name),*
-                })
-            }
-        }
+        let mut buffer = $crate::ParseBuffer::new($text);
+        $(buffer.skip(Regex::new($leading_literal).unwrap())?)?;
+        $(let $name = $crate::parse_single!(type=$type, $(separator=$separator,)? str=$crate::single_read!(buffer$(, $lit)?));)*
+        Ok($constructor_name {
+            $($name),*
+        })
     }
 }
 
@@ -69,7 +66,17 @@ macro_rules! formatted_struct {
         }
     ) => {
         $crate::make_item!{struct $struct_name $(meta=$($struct_meta),*)? { $($name:$type),*}}
-        $crate::make_reader!{struct=$struct_name $(leading_literal=$leading_literal)? $(name=$name, type=$type {$(until=$lit)? $(separator=$separator)?}),*}
+
+        impl $crate::Parsable for $struct_name{
+            fn parse(text: &str) -> MyResult<$struct_name> {
+                $crate::make_reader_body!{
+                    constructor=$struct_name
+                    text=(text)
+                    $(leading_literal=$leading_literal)?
+                    $(name=$name, type=$type {$(until=$lit)? $(separator=$separator)?}),*
+                }
+            }
+        }
     };
     (
         $(#[$($enum_meta:meta),*])?
@@ -98,7 +105,33 @@ macro_rules! formatted_struct {
                 ),+
             }
         }
-        // $crate::make_reader!{struct=$enum_name $(leading_literal=$leading_literal)? $(name=$name, type=$type {$(until=$lit)? $(separator=$separator)?}),*}
+        impl $crate::Parsable for $enum_name {
+            fn parse(text: &str) -> MyResult<$enum_name> {
+                use $enum_name::*;
+                let mut errors = Vec::new();
+                $(
+                    let result = (|| -> MyResult<$enum_name> {
+                        $crate::make_reader_body!{
+                            constructor=$variant_name
+                            text=(text)
+                            $(leading_literal=$leading_literal)?
+                            $(name=$name, type=$type {$(until=$lit)? $(separator=$separator)?}),*
+                        }
+                    })();
+                    match result {
+                        Ok(x) => return Ok(x),
+                        Err(e) => errors.push(e),
+                    };
+                )+
+                let mut error_text = concat!("Could not find a match for enum ", stringify!($enum_name), "\n").to_string();
+                for error in errors {
+                    error_text.push_str("    ");
+                    error_text.push_str(&error.to_string());
+                    error_text.push_str("\n");
+                }
+                Err(From::from(error_text))
+            }
+        }
     };
 }
 
@@ -129,6 +162,7 @@ mod tests {
     }
 
     formatted_struct! {
+        #[derive(PartialEq, Eq, Debug)]
         enum VariantTest {
             Foo {
                 "foo",
@@ -172,5 +206,31 @@ mod tests {
             }
         );
         Ok(())
+    }
+    #[test]
+    fn parse_enum_variant_1() -> MyResult<()> {
+        let parsed = VariantTest::parse("foob@rbaz3")?;
+        assert_eq!(
+            parsed,
+            VariantTest::Foo {
+                bar: "b@r".to_string(),
+                bz: 3
+            }
+        );
+        Ok(())
+    }
+    #[test]
+    fn parse_enum_variant_2() -> MyResult<()> {
+        let parsed = VariantTest::parse("fiz5")?;
+        assert_eq!(parsed, VariantTest::Fiz { buz: 5 });
+        Ok(())
+    }
+    #[test]
+    fn parse_enum_err() {
+        let parsed = VariantTest::parse("faz").unwrap_err();
+        assert_eq!(
+            parsed.to_string(), 
+            "Could not find a match for enum VariantTest\n    skip didn't find Regex(\"foo\") when searching in \"faz\" as part of \"faz\"\n    skip didn't find Regex(\"fiz\") when searching in \"faz\" as part of \"faz\"\n"
+        );
     }
 }
