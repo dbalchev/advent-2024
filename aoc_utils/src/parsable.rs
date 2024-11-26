@@ -9,7 +9,7 @@ pub trait Parsable: Sized {
 }
 
 pub trait SeparatorParsable: Sized {
-    fn parse_separated_by(text: &str, separator: Regex) -> MyResult<Self>;
+    fn parse_separated_by(text: &str, separator: &Regex) -> MyResult<Self>;
 }
 
 impl<A: FromStr> Parsable for A
@@ -22,7 +22,7 @@ where
 }
 
 impl<A: Parsable> SeparatorParsable for Vec<A> {
-    fn parse_separated_by(text: &str, separator: Regex) -> MyResult<Self> {
+    fn parse_separated_by(text: &str, separator: &Regex) -> MyResult<Self> {
         separator
             .split(text)
             .map(A::parse)
@@ -42,7 +42,7 @@ impl<'a> ParseBuffer<'a> {
             remaining_input: text,
         }
     }
-    pub fn skip(&mut self, skip_pattern: Regex) -> MyResult<()> {
+    pub fn skip(&mut self, skip_pattern: &Regex) -> MyResult<()> {
         match skip_pattern.find_at(self.remaining_input, 0) {
             Some(skip_match) => {
                 self.remaining_input = &self.remaining_input[skip_match.end()..];
@@ -57,7 +57,7 @@ impl<'a> ParseBuffer<'a> {
             }
         }
     }
-    pub fn read_until(&mut self, end_pattern: Regex) -> MyResult<&'a str> {
+    pub fn read_until(&mut self, end_pattern: &Regex) -> MyResult<&'a str> {
         let remaining_input = self.remaining_input;
         match end_pattern.find(remaining_input) {
             Some(end_match) => {
@@ -86,14 +86,14 @@ mod tests {
     #[test]
     fn skip() -> MyResult<()> {
         let mut buffer = ParseBuffer::new("foobar");
-        buffer.skip(Regex::new("foo").unwrap())?;
+        buffer.skip(&Regex::new("foo").unwrap())?;
         assert_eq!(buffer.read_to_end(), "bar");
         Ok(())
     }
     #[test]
     fn read_until() -> MyResult<()> {
         let mut buffer = ParseBuffer::new("foobarbaz");
-        assert_eq!(buffer.read_until(Regex::new("bar").unwrap())?, "foo");
+        assert_eq!(buffer.read_until(&Regex::new("bar").unwrap())?, "foo");
         assert_eq!(buffer.read_to_end(), "baz");
         Ok(())
     }
@@ -101,7 +101,7 @@ mod tests {
     fn parse_separated() -> MyResult<()> {
         let separator = Regex::new(", ").unwrap();
         assert_eq!(
-            Vec::<i32>::parse_separated_by("1, 2, 3", separator)?,
+            Vec::<i32>::parse_separated_by("1, 2, 3", &separator)?,
             vec![1, 2, 3]
         );
         Ok(())

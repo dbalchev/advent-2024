@@ -1,6 +1,18 @@
 use crate::MyResult;
 
 #[macro_export]
+macro_rules! make_regex {
+    ($expr:expr) => {
+        {
+            use std::sync::LazyLock;
+            use $crate::Regex;
+            static COMPILED_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new($expr).unwrap());
+            LazyLock::force(&COMPILED_REGEX)
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! parse_single {
     (type=$type:ty, str=$expr:expr) => {
         <$type as $crate::Parsable>::parse($expr)?
@@ -8,7 +20,7 @@ macro_rules! parse_single {
     (type=$type:ty, separator=$separator:literal, str=$expr:expr) => {
         <$type as $crate::SeparatorParsable>::parse_separated_by(
             $expr,
-            $crate::make_regex($separator),
+            $crate::make_regex!($separator),
         )?
     };
 }
@@ -19,7 +31,7 @@ macro_rules! single_read {
         $buffer.read_to_end()
     };
     ($buffer:ident, $lit:literal) => {
-        $buffer.read_until($crate::make_regex($lit))?
+        $buffer.read_until($crate::make_regex!($lit))?
     };
 }
 
@@ -32,7 +44,7 @@ macro_rules! make_reader_body {
         $(name=$name:ident, type=$type:ty {$(until=$lit:literal)? $(separator=$separator:literal)?}),*
     ) => {
         let mut buffer = $crate::ParseBuffer::new($text);
-        $(buffer.skip($crate::make_regex($leading_literal))?)?;
+        $(buffer.skip($crate::make_regex!($leading_literal))?)?;
         $(let $name = $crate::parse_single!(type=$type, $(separator=$separator,)? str=$crate::single_read!(buffer$(, $lit)?));)*
         Ok($constructor_name {
             $($name),*
