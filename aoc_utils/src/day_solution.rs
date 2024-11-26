@@ -13,7 +13,9 @@ pub struct ExistentialDaySolution {
     #[allow(clippy::type_complexity)]
     pub solve: Box<dyn Fn(&str) -> MyResult<Vec<u8>>>,
     pub canonical_name: &'static str,
+    pub leading_zeros_name: &'static str,
     pub alternative_names: Vec<&'static str>,
+    pub preferred_sample_input: &'static str,
 }
 impl Debug for ExistentialDaySolution {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -54,8 +56,8 @@ pub trait DaySolution {
     fn solve_2(_input: &Self::InputFormat) -> MyResult<impl Debug + 'static> {
         Err::<(), Box<dyn Error>>(From::from("solve_2 not implemented"))
     }
-    fn preferred_input() -> Option<&'static str> {
-        None
+    fn preferred_sample_input() -> &'static str {
+        ""
     }
 }
 
@@ -100,6 +102,8 @@ where
             Ok(display_buffer.into_inner())
         }),
         canonical_name: no_leading_digits,
+        leading_zeros_name: no_day_prefix,
         alternative_names,
+        preferred_sample_input: A::preferred_sample_input(),
     }
 }
