@@ -1,4 +1,6 @@
-use aoc_utils::{formatted_struct, MyResult};
+use std::fmt::Debug;
+
+use aoc_utils::{formatted_struct, DaySolution, MyResult};
 
 // pub type InputFormat = String;
 
@@ -24,14 +26,16 @@ formatted_struct! {
         instructions: Vec<Instruction>,
     }
 }
-pub fn solve_1(input: &InputFormat) -> MyResult<String> {
-    // let f = Foo {
-    //     foo: "x".to_string(),
-    //     bar: 3,
-    // };
-    Ok(format!("Hello {:?}", *input))
-}
 
-pub fn solve_2(_input: &InputFormat) -> MyResult<String> {
-    Err("not implemented")?
+pub struct Solution;
+
+impl DaySolution for Solution {
+    type InputFormat = InputFormat;
+    fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+        // let f = Foo {
+        //     foo: "x".to_string(),
+        //     bar: 3,
+        // };
+        Ok(format!("Hello {:?}", *input))
+    }
 }

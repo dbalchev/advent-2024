@@ -1,4 +1,5 @@
 use std::{
+    error::Error,
     fmt::Debug,
     fs::File,
     io::{Read, Write},
@@ -8,13 +9,13 @@ use termcolor::{Buffer, ColorSpec, WriteColor};
 
 use crate::{MyResult, Parsable};
 
-pub struct DaySolution {
+pub struct ExistentialDaySolution {
     #[allow(clippy::type_complexity)]
     pub solve: Box<dyn Fn(&str) -> MyResult<Vec<u8>>>,
     pub canonical_name: &'static str,
     pub alternative_names: Vec<&'static str>,
 }
-impl Debug for DaySolution {
+impl Debug for ExistentialDaySolution {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DaySolution")
             .field("canonical_name", &self.canonical_name)
@@ -44,15 +45,24 @@ fn pretty_print<A: Debug + 'static>(result: MyResult<A>) -> Vec<u8> {
     display_buffer.into_inner()
 }
 
-pub fn make_day_solution<
-    InputFormat: Parsable + 'static,
-    A: Debug + 'static,
-    B: Debug + 'static,
->(
-    solution_filename: &'static str,
-    solve_1: fn(&InputFormat) -> MyResult<A>,
-    solve_2: fn(&InputFormat) -> MyResult<B>,
-) -> DaySolution {
+pub trait DaySolution {
+    type InputFormat;
+
+    fn solve_1(_input: &Self::InputFormat) -> MyResult<impl Debug + 'static> {
+        Err::<(), Box<dyn Error>>(From::from("solve_1 not implemented"))
+    }
+    fn solve_2(_input: &Self::InputFormat) -> MyResult<impl Debug + 'static> {
+        Err::<(), Box<dyn Error>>(From::from("solve_2 not implemented"))
+    }
+    fn preferred_input() -> Option<&'static str> {
+        None
+    }
+}
+
+pub fn make_day_solution<A: DaySolution>(solution_filename: &'static str) -> ExistentialDaySolution
+where
+    A::InputFormat: Parsable,
+{
     let no_rs_sufix = solution_filename.trim_end_matches(".rs");
     let no_day_prefix = no_rs_sufix.trim_start_matches("day_");
     let no_leading_digits: &str = no_day_prefix.trim_start_matches("0");
@@ -65,15 +75,15 @@ pub fn make_day_solution<
     if no_leading_digits != no_day_prefix {
         alternative_names.push(no_day_prefix);
     }
-    DaySolution {
+    ExistentialDaySolution {
         solve: Box::new(move |input_filename| {
             let mut input_file = File::open(input_filename)?;
             let mut file_content = String::new();
             input_file.read_to_string(&mut file_content)?;
             let file_content = file_content.trim_end_matches("\n");
-            let input = InputFormat::parse(file_content)?;
-            let result_1 = solve_1(&input);
-            let result_2 = solve_2(&input);
+            let input = A::InputFormat::parse(file_content)?;
+            let result_1 = A::solve_1(&input);
+            let result_2 = A::solve_2(&input);
             let mut display_buffer = Buffer::ansi();
             display_buffer
                 .set_color(ColorSpec::new().set_fg(Some(termcolor::Color::Yellow)))
