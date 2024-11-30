@@ -10,6 +10,3 @@ default-run = "aoc"
 
 [[bin]]
 name = "aoc"
-
-[[bin]]
-name = "data_downloader"
