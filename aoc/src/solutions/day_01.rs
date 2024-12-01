@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{collections::HashMap, fmt::Debug};
 
 use aoc_utils::{formatted_struct, DaySolution, MyResult};
 
@@ -7,9 +7,9 @@ use aoc_utils::{formatted_struct, DaySolution, MyResult};
 formatted_struct! {
     #[derive(Debug)]
     pub struct InputLine {
-        first:i32,
+        first:i64,
         " +",
-        second:i32,
+        second:i64,
     }
 }
 
@@ -33,8 +33,20 @@ impl DaySolution for Solution {
         let delta_sum = firsts
             .into_iter()
             .zip(seconds.into_iter())
-            .map(|(first, second)| i32::abs(first - second))
-            .sum::<i32>();
+            .map(|(first, second)| i64::abs(first - second))
+            .sum::<i64>();
         Ok(delta_sum)
+    }
+    fn solve_2(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+        let mut second_counts = HashMap::<i64, i64>::new();
+        let firsts = input.lines.iter().map(|l| l.first).collect::<Vec<_>>();
+        for second in input.lines.iter().map(|l| l.second) {
+            *second_counts.entry(second).or_insert(0) += 1;
+        }
+        let similarity_sum = firsts
+            .into_iter()
+            .map(|first| first * second_counts.get(&first).unwrap_or(&0))
+            .sum::<i64>();
+        Ok(similarity_sum)
     }
 }
