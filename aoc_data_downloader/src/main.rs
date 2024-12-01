@@ -34,6 +34,7 @@ impl Cli {
             let mut file = OpenOptions::new()
                 .write(true)
                 .create(true)
+                .truncate(true)
                 .open(file_path)?;
             let text = pre.text().collect::<String>();
 
@@ -48,6 +49,7 @@ impl Cli {
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(file_path)?;
         file.write_all(real_input.as_bytes())?;
         Ok(())

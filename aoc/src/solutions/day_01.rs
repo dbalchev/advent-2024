@@ -2,8 +2,6 @@ use std::{collections::HashMap, fmt::Debug};
 
 use aoc_utils::{formatted_struct, DaySolution, MyResult};
 
-// pub type InputFormat = String;
-
 formatted_struct! {
     #[derive(Debug)]
     pub struct InputLine {
@@ -32,7 +30,7 @@ impl DaySolution for Solution {
         seconds.sort();
         let delta_sum = firsts
             .into_iter()
-            .zip(seconds.into_iter())
+            .zip(seconds)
             .map(|(first, second)| i64::abs(first - second))
             .sum::<i64>();
         Ok(delta_sum)
