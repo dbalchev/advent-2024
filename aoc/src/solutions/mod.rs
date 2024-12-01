@@ -21,5 +21,5 @@ macro_rules! register_days {
         }
     };
 }
-register_days! {day_00}
+register_days! {day_00, day_01}
 // include! {concat!(env!("OUT_DIR"), "/days.fragment")}

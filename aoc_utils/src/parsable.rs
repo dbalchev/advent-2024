@@ -17,7 +17,10 @@ where
     <A as FromStr>::Err: 'static + std::error::Error,
 {
     fn parse(text: &str) -> MyResult<A> {
-        Ok(Self::from_str(text)?)
+        match Self::from_str(text) {
+            Ok(x) => Ok(x),
+            Err(err) => Err(From::from(format!("Error {} when parsing {}", err, text))),
+        }
     }
 }
 
