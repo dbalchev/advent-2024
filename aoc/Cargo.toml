@@ -6,4 +6,3 @@ default-run = "aoc"
 
 [dependencies]
 "aoc_utils" = { path="../aoc_utils" }
-"clap" = { version = "4.5.21", features=["derive"] }

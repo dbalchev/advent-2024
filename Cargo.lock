@@ -93,7 +93,6 @@ name = "aoc"
 version = "0.1.0"
 dependencies = [
  "aoc_utils",
- "clap",
 ]
 
 [[package]]
@@ -111,6 +110,7 @@ dependencies = [
 name = "aoc_utils"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "regex",
  "termcolor",
 ]
