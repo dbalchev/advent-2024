@@ -121,21 +121,25 @@ macro_rules! formatted_struct {
         impl $crate::Parsable for $enum_name {
             fn parse(text: &str) -> MyResult<$enum_name> {
                 use $enum_name::*;
-                let mut errors = Vec::new();
-                $(
-                    let result = (|| -> MyResult<$enum_name> {
-                        $crate::make_reader_body!{
-                            constructor=$variant_name
-                            text=(text)
-                            $(leading_literal=$leading_literal)?
-                            $(name=$name, type=$type {$(until=$lit)? $(separator=$separator)?}),*
-                        }
-                    })();
-                    match result {
-                        Ok(x) => return Ok(x),
-                        Err(e) => errors.push(e),
-                    };
-                )+
+                let errors = [
+                    $(
+                        {
+                            let result = (|| -> MyResult<$enum_name> {
+                                $crate::make_reader_body!{
+                                    constructor=$variant_name
+                                    text=(text)
+                                    $(leading_literal=$leading_literal)?
+                                    $(name=$name, type=$type {$(until=$lit)? $(separator=$separator)?}),*
+                                }
+                            })();
+                            match result {
+                                Ok(x) => return Ok(x),
+                                Err(e) => e,
+                            }
+                        },
+                    )+
+                ];
+                
                 let mut error_text = concat!("Could not find a match for enum ", stringify!($enum_name), "\n").to_string();
                 for error in errors {
                     error_text.push_str("    ");
