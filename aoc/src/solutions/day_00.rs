@@ -2,8 +2,6 @@ use std::fmt::Debug;
 
 use aoc_utils::{formatted_struct, DaySolution, MyResult};
 
-// pub type InputFormat = String;
-
 formatted_struct! {
     #[derive(Debug)]
     pub enum Instruction {
@@ -32,10 +30,6 @@ pub struct Solution;
 impl DaySolution for Solution {
     type InputFormat = InputFormat;
     fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
-        // let f = Foo {
-        //     foo: "x".to_string(),
-        //     bar: 3,
-        // };
         Ok(format!("Hello {:?}", *input))
     }
 }
