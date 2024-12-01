@@ -2,5 +2,5 @@
 resolver = "2"
 members = [
     "aoc_utils",
-    "aoc",
+    "aoc", "aoc_data_downloader",
 ]

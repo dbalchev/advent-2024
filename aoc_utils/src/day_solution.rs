@@ -15,7 +15,7 @@ pub struct ExistentialDaySolution {
     pub canonical_name: &'static str,
     pub leading_zeros_name: &'static str,
     pub alternative_names: Vec<&'static str>,
-    pub preferred_sample_input: &'static str,
+    pub preferred_sample_input: i32,
 }
 impl Debug for ExistentialDaySolution {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -56,8 +56,8 @@ pub trait DaySolution {
     fn solve_2(_input: &Self::InputFormat) -> MyResult<impl Debug + 'static> {
         Err::<(), Box<dyn Error>>(From::from("solve_2 not implemented"))
     }
-    fn preferred_sample_input() -> &'static str {
-        ""
+    fn preferred_sample_input() -> i32 {
+        0
     }
 }
 

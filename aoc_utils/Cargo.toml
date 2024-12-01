@@ -6,8 +6,3 @@ edition = "2021"
 [dependencies]
 termcolor = "1.4.1"
 regex = "1.11.1"
-reqwest = "0.12"
-scraper = "0.21.0"
-
-[[bin]]
-name = "data_downloader"

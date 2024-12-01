@@ -1,6 +1,6 @@
 use std::io::{stdout, Write};
 
-use aoc_utils::MyResult;
+use aoc_utils::{make_real_path, make_sample_path, MyResult};
 use clap::{builder::PossibleValue, Args, CommandFactory, FromArgMatches, Parser, ValueEnum};
 use solutions::make_day_solutions;
 
@@ -55,11 +55,11 @@ fn main() -> MyResult<()> {
         .unwrap();
     let input_file = cli.input_source.input_file.unwrap_or_else(|| {
         if cli.input_source.real {
-            format!("inputs/real/{}.txt", day_solution.leading_zeros_name)
+            make_real_path(day_solution.canonical_name.parse().unwrap())
         } else {
-            format!(
-                "inputs/sample/{}{}.txt",
-                day_solution.leading_zeros_name, day_solution.preferred_sample_input
+            make_sample_path(
+                day_solution.canonical_name.parse().unwrap(),
+                day_solution.preferred_sample_input,
             )
         }
     });
