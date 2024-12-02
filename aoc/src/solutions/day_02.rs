@@ -45,14 +45,10 @@ impl Report {
         match first_bad_level {
             None => true,
             Some(bad_index) => {
-                let bad_index = bad_index as isize;
-                let removal_candidates = [bad_index - 1, bad_index, bad_index + 1];
+                let removal_candidates = [0, bad_index, bad_index + 1];
                 for i in removal_candidates {
-                    if i < 0 {
-                        continue;
-                    }
                     let mut new_report_levels = self.levels.clone();
-                    new_report_levels.remove(i as usize);
+                    new_report_levels.remove(i);
                     if bad_level_index(&new_report_levels).is_none() {
                         return true;
                     }
