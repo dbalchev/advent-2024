@@ -18,7 +18,7 @@ formatted_struct! {
     }
 }
 
-fn bad_level_index(levels: &Vec<i32>) -> Option<usize> {
+fn bad_level_index(levels: &[i32]) -> Option<usize> {
     let mut desired_ord = None;
     for (i, (l, r)) in levels.iter().zip(levels.iter().skip(1)).enumerate() {
         let current_ord = l.cmp(r);
