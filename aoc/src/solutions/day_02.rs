@@ -18,23 +18,48 @@ formatted_struct! {
     }
 }
 
+fn bad_level_index(levels: &Vec<i32>) -> Option<usize> {
+    let mut desired_ord = None;
+    for (i, (l, r)) in levels.iter().zip(levels.iter().skip(1)).enumerate() {
+        let current_ord = l.cmp(r);
+        if current_ord == Ordering::Equal {
+            return Some(i);
+        }
+        desired_ord = desired_ord.or(Some(current_ord));
+        if desired_ord != Some(current_ord) {
+            return Some(i);
+        }
+        if l.abs_diff(*r) > 3 {
+            return Some(i);
+        }
+    }
+    None
+}
+
 impl Report {
     fn is_safe(&self) -> bool {
-        let mut desired_ord = None;
-        for (l, r) in self.levels.iter().zip(self.levels.iter().skip(1)) {
-            let current_ord = l.cmp(r);
-            if current_ord == Ordering::Equal {
-                return false;
-            }
-            desired_ord = desired_ord.or(Some(current_ord));
-            if desired_ord != Some(current_ord) {
-                return false;
-            }
-            if l.abs_diff(*r) > 3 {
-                return false;
+        bad_level_index(&self.levels).is_none()
+    }
+    fn is_tolerably_safe(&self) -> bool {
+        let first_bad_level = bad_level_index(&self.levels);
+        match first_bad_level {
+            None => true,
+            Some(bad_index) => {
+                let removal_candidates: &[usize] = if bad_index == 0 {
+                    &[bad_index, bad_index + 1]
+                } else {
+                    &[bad_index - 1, bad_index, bad_index + 1]
+                };
+                for i in removal_candidates {
+                    let mut new_report_levels = self.levels.clone();
+                    new_report_levels.remove(*i);
+                    if bad_level_index(&new_report_levels).is_none() {
+                        return true;
+                    }
+                }
+                false
             }
         }
-        true
     }
 }
 
@@ -44,6 +69,14 @@ impl DaySolution for Solution {
     type InputFormat = InputFormat;
     fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
         let safe_count = input.reports.iter().filter(|x| x.is_safe()).count();
+        Ok(safe_count)
+    }
+    fn solve_2(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+        let safe_count = input
+            .reports
+            .iter()
+            .filter(|x| x.is_tolerably_safe())
+            .count();
         Ok(safe_count)
     }
 }
