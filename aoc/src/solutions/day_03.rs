@@ -1,9 +1,15 @@
 use std::fmt::Debug;
 
 use aoc_utils::{DaySolution, MyResult, Parsable};
-use regex::Regex;
+use regex::{Captures, Regex};
 
 pub struct Solution;
+
+fn extract(m: &Captures, name: &str) -> MyResult<i32> {
+    let text = m.name(name).ok_or(format!("{} is missing", name))?.as_str();
+
+    i32::parse(text)
+}
 
 impl DaySolution for Solution {
     type InputFormat = String;
@@ -11,14 +17,7 @@ impl DaySolution for Solution {
         let instruction_matcher = Regex::new("mul\\((?<lh>\\d{1,3}),(?<rh>\\d{1,3})\\)")?;
         let matches = instruction_matcher
             .captures_iter(input)
-            .map(|m| {
-                let extract = |name| -> MyResult<_> {
-                    let text = m.name(name).ok_or(format!("{} is missing", name))?.as_str();
-
-                    Ok(i32::parse(text)?)
-                };
-                Ok(extract("lh")? * extract("rh")?)
-            })
+            .map(|m| Ok(extract(&m, "lh")? * extract(&m, "rh")?))
             .collect::<MyResult<Vec<_>>>()?;
         Ok(matches.into_iter().sum::<i32>())
     }
@@ -41,12 +40,7 @@ impl DaySolution for Solution {
                 if !enabled {
                     return Ok(0);
                 }
-                let extract = |name| -> MyResult<_> {
-                    let text = m.name(name).ok_or(format!("{} is missing", name))?.as_str();
-
-                    Ok(i32::parse(text)?)
-                };
-                Ok(extract("lh")? * extract("rh")?)
+                Ok(extract(&m, "lh")? * extract(&m, "rh")?)
             })
             .collect::<MyResult<Vec<_>>>()?;
         // Ok(format!("{:?}", matches))
