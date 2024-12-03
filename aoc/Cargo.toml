@@ -6,3 +6,4 @@ default-run = "aoc"
 
 [dependencies]
 "aoc_utils" = { path="../aoc_utils" }
+regex = "1.11.1"

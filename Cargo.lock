@@ -93,6 +93,7 @@ name = "aoc"
 version = "0.1.0"
 dependencies = [
  "aoc_utils",
+ "regex",
 ]
 
 [[package]]
