@@ -11,7 +11,7 @@ formatted_struct! {
 }
 
 fn is_xmas(grid: &[String], (i, j): (i32, i32), (di, dj): &(i32, i32)) -> bool {
-    for (l, &byte) in b"XMAS".into_iter().enumerate() {
+    for (l, &byte) in b"XMAS".iter().enumerate() {
         let l = l as i32;
         let ci = i + di * l;
         let cj = j + dj * l;
@@ -26,7 +26,7 @@ fn is_xmas(grid: &[String], (i, j): (i32, i32), (di, dj): &(i32, i32)) -> bool {
             return false;
         }
     }
-    return true;
+    true
 }
 
 const DELTAS: [(i32, i32); 8] = [
@@ -56,7 +56,7 @@ fn is_cross_mass(grid: &[String], (i, j): (i32, i32), start_angle: i32) -> bool 
     if poke_angle_offset(2) != b'M' || poke_angle_offset(6) != b'S' {
         return false;
     }
-    return true;
+    true
 }
 
 pub struct Solution;
