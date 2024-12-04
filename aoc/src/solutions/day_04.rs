@@ -29,17 +29,34 @@ fn is_xmas(grid: &[String], (i, j): (i32, i32), (di, dj): &(i32, i32)) -> bool {
     return true;
 }
 
-fn make_directions() -> Vec<(i32, i32)> {
-    let mut result = Vec::with_capacity(8);
-    for i in [-1, 0, 1] {
-        for j in [-1, 0, 1] {
-            if i == 0 && j == 0 {
-                continue;
-            }
-            result.push((i, j));
-        }
+const DELTAS: [(i32, i32); 8] = [
+    (1, 0),
+    (1, 1),
+    (0, 1),
+    (-1, 1),
+    (-1, 0),
+    (-1, -1),
+    (0, -1),
+    (1, -1),
+];
+
+fn is_cross_mass(grid: &[String], (i, j): (i32, i32), start_angle: i32) -> bool {
+    let poke = |i: i32, j: i32| grid[i as usize].as_bytes()[j as usize];
+    if poke(i, j) != b'A' {
+        return false;
     }
-    result
+
+    let poke_angle_offset = |angle_offset: i32| {
+        let (di, dj) = DELTAS[((start_angle + angle_offset) % 8) as usize];
+        poke(i + di, j + dj)
+    };
+    if poke_angle_offset(0) != b'M' || poke_angle_offset(4) != b'S' {
+        return false;
+    }
+    if poke_angle_offset(2) != b'M' || poke_angle_offset(6) != b'S' {
+        return false;
+    }
+    return true;
 }
 
 pub struct Solution;
@@ -48,13 +65,33 @@ impl DaySolution for Solution {
     type InputFormat = InputFormat;
     fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
         let grid = &input.lines;
-        let directions = make_directions();
         let mut num_xmas = 0;
         for i in 0..grid.len() {
             for j in 0..grid[i].len() {
-                for direction in &directions {
+                for direction in &DELTAS {
                     num_xmas += is_xmas(grid, (i as i32, j as i32), direction) as i32;
                 }
+            }
+        }
+        Ok(num_xmas)
+    }
+    fn solve_2(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+        let grid = &input.lines;
+        let mut num_xmas = 0;
+        for i in 1..(grid.len() - 1) {
+            for j in 1..(grid[i].len() - 1) {
+                // let mut current_xmas = 0;
+                for start_angle in [1, 3, 5, 7] {
+                    // current_xmas += is_cross_mass(grid, (i as i32, j as i32), start_angle) as i32;
+                    num_xmas += is_cross_mass(grid, (i as i32, j as i32), start_angle) as i32;
+                }
+                // if current_xmas == 1 {
+                //     num_xmas += 1;
+                //     println!("{}", &grid[i - 1][j - 1..j + 2]);
+                //     println!("{}", &grid[i][j - 1..j + 2]);
+                //     println!("{}", &grid[i + 1][j - 1..j + 2]);
+                //     println!();
+                // }
             }
         }
         Ok(num_xmas)
