@@ -76,11 +76,10 @@ impl ProcessedInput {
         }
         true
     }
-    fn sort_update(&self, update: Update) -> Update {
-        let Update { page_numbers } = update;
-        let mut sorted_page_numbers = Vec::new();
+    fn sort_update(&self, update: &Update) -> Update {
+        let mut sorted_page_numbers = Vec::with_capacity(update.page_numbers.len());
 
-        for current_page in page_numbers {
+        for &current_page in &update.page_numbers {
             let insert_index = sorted_page_numbers
                 .iter()
                 .enumerate()
@@ -121,7 +120,6 @@ impl DaySolution for Solution {
             .updates
             .iter()
             .filter(|u| !input.check_update(u))
-            .cloned()
             .map(|u| input.sort_update(u))
             .map(|Update { page_numbers }| page_numbers[page_numbers.len() / 2])
             // .collect::<Vec<_>>();
