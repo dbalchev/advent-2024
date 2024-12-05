@@ -65,7 +65,7 @@ impl Parsable for ProcessedInput {
 
 impl ProcessedInput {
     fn check_update(&self, update: &Update) -> bool {
-        let mut past_pages = HashSet::new();
+        let mut past_pages = HashSet::with_capacity(update.page_numbers.len());
         for &page in &update.page_numbers {
             if let Some(pages_after) = self.page_to_pages_after.get(&page) {
                 if !past_pages.is_disjoint(pages_after) {
