@@ -53,7 +53,7 @@ impl Parsable for ProcessedInput {
         {
             page_to_pages_after
                 .entry(page_before)
-                .or_insert_with(|| HashSet::new())
+                .or_insert_with(HashSet::new)
                 .insert(page_after);
         }
         Ok(ProcessedInput {
@@ -74,7 +74,7 @@ impl ProcessedInput {
             }
             past_pages.insert(page);
         }
-        return true;
+        true
     }
     fn sort_update(&self, update: Update) -> Update {
         let Update { page_numbers } = update;
@@ -111,7 +111,7 @@ impl DaySolution for Solution {
             .updates
             .iter()
             .filter(|u| input.check_update(u))
-            .map(|&Update { ref page_numbers }| page_numbers[page_numbers.len() / 2])
+            .map(|Update { page_numbers }| page_numbers[page_numbers.len() / 2])
             .sum::<i32>();
 
         Ok(result)
