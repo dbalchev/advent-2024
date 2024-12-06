@@ -44,7 +44,7 @@ const DIRECTIONS: [(isize, isize); 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)];
 pub struct Solution;
 
 impl ProcessedInputFormat {
-    fn simulate(&self) -> Option<usize> {
+    fn simulate(&self) -> Option<Vec<(isize, isize)>> {
         let ProcessedInputFormat {
             grid,
             starting_pos: (si, sj),
@@ -69,37 +69,38 @@ impl ProcessedInputFormat {
             }
             current_pos = (ni, nj);
             let current_pos_history = position_history.entry(current_pos).or_insert(Vec::new());
-            if current_pos_history
-                .iter()
-                .any(|&x| x == current_dir)
-            {
+            if current_pos_history.iter().any(|&x| x == current_dir) {
                 return None;
             }
             current_pos_history.push(current_dir);
         }
-        Some(position_history.len())
+        Some(position_history.keys().cloned().collect::<Vec<_>>())
     }
 }
 
 impl DaySolution for Solution {
     type InputFormat = ProcessedInputFormat;
     fn solve_1(input: &ProcessedInputFormat) -> MyResult<impl Debug + 'static> {
-        input
+        Ok(input
             .simulate()
-            .ok_or_else(|| From::from("shouldn't shuck in a loop"))
+            .ok_or_else(|| -> Box<dyn Error> { From::from("shouldn't shuck in a loop") })?
+            .len())
     }
     fn solve_2(input: &ProcessedInputFormat) -> MyResult<impl Debug + 'static> {
         let mut input = input.clone();
+        let initial_path = input
+            .simulate()
+            .ok_or_else(|| -> Box<dyn Error> { From::from("shouldn't shuck in a loop") })?;
         let mut loops = 0;
-        for i in 0..input.grid.len() {
-            for j in 0..input.grid[i].len() {
-                if (i, j) == input.starting_pos || input.grid[i][j] != b'.' {
-                    continue;
-                }
-                input.grid[i][j] = b'o';
-                loops += input.simulate().is_none() as i32;
-                input.grid[i][j] = b'.';
+        for (i, j) in initial_path {
+            let i = i as usize;
+            let j = j as usize;
+            if (i, j) == input.starting_pos || input.grid[i][j] != b'.' {
+                continue;
             }
+            input.grid[i][j] = b'o';
+            loops += input.simulate().is_none() as i32;
+            input.grid[i][j] = b'.';
         }
         Ok(loops)
     }
