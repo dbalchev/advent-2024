@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Debug};
+use std::{collections::HashMap, fmt::Debug};
 
 use aoc_utils::{formatted_struct, DaySolution, MyResult, Parsable};
 use std::error::Error;
@@ -9,7 +9,7 @@ formatted_struct! {
         grid: Vec<String>,
     }
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ProcessedInputFormat {
     grid: Vec<Vec<u8>>,
     starting_pos: (usize, usize),
@@ -43,17 +43,16 @@ const DIRECTIONS: [(isize, isize); 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)];
 
 pub struct Solution;
 
-impl DaySolution for Solution {
-    type InputFormat = ProcessedInputFormat;
-    fn solve_1(input: &ProcessedInputFormat) -> MyResult<impl Debug + 'static> {
+impl ProcessedInputFormat {
+    fn simulate(&self) -> Option<usize> {
         let ProcessedInputFormat {
             grid,
             starting_pos: (si, sj),
-        } = input;
+        } = self;
         let mut current_pos = (*si as isize, *sj as isize);
         let mut current_dir = 0;
-        let mut position_history = HashSet::new();
-        position_history.insert(current_pos);
+        let mut position_history = HashMap::new();
+        position_history.insert(current_pos, vec![current_dir]);
         loop {
             let (i, j) = current_pos;
             let (di, dj) = DIRECTIONS[current_dir];
@@ -69,8 +68,40 @@ impl DaySolution for Solution {
                 continue;
             }
             current_pos = (ni, nj);
-            position_history.insert(current_pos);
+            let current_pos_history = position_history.entry(current_pos).or_insert(Vec::new());
+            if current_pos_history
+                .iter()
+                .find(|&&x| x == current_dir)
+                .is_some()
+            {
+                return None;
+            }
+            current_pos_history.push(current_dir);
         }
-        Ok(position_history.len())
+        Some(position_history.len())
+    }
+}
+
+impl DaySolution for Solution {
+    type InputFormat = ProcessedInputFormat;
+    fn solve_1(input: &ProcessedInputFormat) -> MyResult<impl Debug + 'static> {
+        input
+            .simulate()
+            .ok_or_else(|| From::from("shouldn't shuck in a loop"))
+    }
+    fn solve_2(input: &ProcessedInputFormat) -> MyResult<impl Debug + 'static> {
+        let mut input = input.clone();
+        let mut loops = 0;
+        for i in 0..input.grid.len() {
+            for j in 0..input.grid[i].len() {
+                if (i, j) == input.starting_pos || input.grid[i][j] != b'.' {
+                    continue;
+                }
+                input.grid[i][j] = b'o';
+                loops += input.simulate().is_none() as i32;
+                input.grid[i][j] = b'.';
+            }
+        }
+        Ok(loops)
     }
 }
