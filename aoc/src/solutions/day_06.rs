@@ -71,8 +71,7 @@ impl ProcessedInputFormat {
             let current_pos_history = position_history.entry(current_pos).or_insert(Vec::new());
             if current_pos_history
                 .iter()
-                .find(|&&x| x == current_dir)
-                .is_some()
+                .any(|&x| x == current_dir)
             {
                 return None;
             }
