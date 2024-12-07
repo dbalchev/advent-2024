@@ -1,4 +1,4 @@
-use std::{cell::LazyCell, fmt::Debug};
+use std::{fmt::Debug, sync::LazyLock};
 
 use aoc_utils::{formatted_struct, DaySolution, MyResult};
 
@@ -21,7 +21,7 @@ formatted_struct! {
 }
 
 fn expectation_after_concatenation(expectation: i64, operand: i64) -> Option<i64> {
-    const POWERS_10: LazyCell<Vec<i64>> = LazyCell::new(|| {
+    static POWERS_10: LazyLock<Vec<i64>> = LazyLock::new(|| {
         let mut result: Vec<i64> = vec![1];
         loop {
             let &last = result.last().expect("it's never empty");
