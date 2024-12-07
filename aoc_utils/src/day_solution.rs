@@ -3,6 +3,7 @@ use std::{
     fmt::Debug,
     fs::File,
     io::{Read, Write},
+    time::{Duration, Instant},
 };
 
 use termcolor::{Buffer, ColorSpec, WriteColor};
@@ -61,6 +62,14 @@ pub trait DaySolution {
     }
 }
 
+fn measure_time<R, F: FnOnce() -> R>(computation: F) -> (R, Duration) {
+    let start_time = Instant::now();
+    let result = computation();
+    let end_time = Instant::now();
+    let diff = end_time - start_time;
+    (result, diff)
+}
+
 pub fn make_day_solution<A: DaySolution>(solution_filename: &'static str) -> ExistentialDaySolution
 where
     A::InputFormat: Parsable,
@@ -84,18 +93,22 @@ where
             input_file.read_to_string(&mut file_content)?;
             let file_content = file_content.trim_end_matches("\n");
             let input = A::InputFormat::parse(file_content)?;
-            let result_1 = A::solve_1(&input);
-            let result_2 = A::solve_2(&input);
+            let (result_1, part_1_time) = measure_time(|| A::solve_1(&input));
             let mut display_buffer = Buffer::ansi();
             display_buffer
                 .set_color(ColorSpec::new().set_fg(Some(termcolor::Color::Yellow)))
                 .unwrap();
-            display_buffer.write_all(b"Part 1:\n")?;
+            display_buffer.write_all(
+                &format!("Part 1: ({:.3}s)\n", part_1_time.as_secs_f64()).into_bytes(),
+            )?;
             display_buffer.write_all(&pretty_print(result_1))?;
             display_buffer
                 .set_color(ColorSpec::new().set_fg(Some(termcolor::Color::Yellow)))
                 .unwrap();
-            display_buffer.write_all(b"\nPart 2:\n")?;
+            let (result_2, part_2_time) = measure_time(|| A::solve_2(&input));
+            display_buffer.write_all(
+                &format!("\nPart 2: ({:.3}s)\n", part_2_time.as_secs_f64()).into_bytes(),
+            )?;
             display_buffer.write_all(&pretty_print(result_2))?;
             display_buffer.write_all(b"\n")?;
             display_buffer.reset()?;
