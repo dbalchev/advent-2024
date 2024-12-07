@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug};
+use std::{collections::HashMap, fmt::Debug, sync::atomic::AtomicUsize, thread};
 
 use aoc_utils::{formatted_struct, DaySolution, MyResult, Parsable};
 use std::error::Error;
@@ -87,21 +87,47 @@ impl DaySolution for Solution {
             .len())
     }
     fn solve_2(input: &ProcessedInputFormat) -> MyResult<impl Debug + 'static> {
-        let mut input = input.clone();
         let initial_path = input
             .simulate()
             .ok_or_else(|| -> Box<dyn Error> { From::from("shouldn't shuck in a loop") })?;
-        let mut loops = 0;
-        for (i, j) in initial_path {
-            let i = i as usize;
-            let j = j as usize;
-            if (i, j) == input.starting_pos || input.grid[i][j] != b'.' {
-                continue;
-            }
-            input.grid[i][j] = b'o';
-            loops += input.simulate().is_none() as i32;
-            input.grid[i][j] = b'.';
-        }
-        Ok(loops)
+        let work_to_be_done = Vec::from(initial_path);
+        let work_index = AtomicUsize::new(0);
+        let result = thread::scope(|score| {
+            let threads = (0..8)
+                .map(|_| {
+                    score.spawn(|| {
+                        let mut loops = 0;
+                        let mut input = input.clone();
+                        loop {
+                            let (i, j) = {
+                                let my_index =
+                                    work_index.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                if my_index < work_to_be_done.len() {
+                                    work_to_be_done[my_index]
+                                } else {
+                                    break;
+                                }
+                            };
+
+                            let i = i as usize;
+                            let j = j as usize;
+                            if (i, j) == input.starting_pos || input.grid[i][j] != b'.' {
+                                continue;
+                            }
+                            input.grid[i][j] = b'o';
+                            loops += input.simulate().is_none() as i32;
+                            input.grid[i][j] = b'.';
+                        }
+
+                        return loops;
+                    })
+                })
+                .collect::<Vec<_>>();
+            threads
+                .into_iter()
+                .map(|thread| thread.join().unwrap())
+                .sum::<i32>()
+        });
+        Ok(result)
     }
 }
