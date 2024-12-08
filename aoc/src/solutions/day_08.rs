@@ -69,4 +69,34 @@ impl DaySolution for Solution {
             .count();
         Ok(antinodes_on_map)
     }
+    fn solve_2(input: &ParsedInputFormat) -> MyResult<impl Debug + 'static> {
+        let mut antinodes = HashSet::new();
+        for (&_antena_name, antenna_locaations) in &input.antenna_locations {
+            for &d_1_location in antenna_locaations {
+                for &d_2_location in antenna_locaations {
+                    if d_1_location == d_2_location {
+                        continue;
+                    }
+                    let di = d_2_location.0 - d_1_location.0;
+                    let dj = d_2_location.1 - d_1_location.1;
+                    for i in 0..input.n_rows {
+                        let di_1 = i - d_1_location.0;
+                        if di_1 % di != 0 {
+                            continue;
+                        }
+                        let t = di_1 / di;
+                        let j = d_1_location.1 + dj * t;
+                        if !(0..input.n_cols).contains(&j) {
+                            continue;
+                        }
+
+                        antinodes.insert((i, j));
+                    }
+                }
+            }
+        }
+        // let mut antinodes = Vec::from_iter(antinodes);
+        // antinodes.sort();
+        Ok(antinodes.len())
+    }
 }
