@@ -51,7 +51,7 @@ impl DaySolution for Solution {
     type InputFormat = ParsedInputFormat;
     fn solve_1(input: &ParsedInputFormat) -> MyResult<impl Debug + 'static> {
         let mut antinodes = HashSet::new();
-        for (_antena_name, antenna_locaations) in &input.antenna_locations {
+        for antenna_locaations in input.antenna_locations.values() {
             for d_1_location in antenna_locaations {
                 for d_2_location in antenna_locaations {
                     if d_1_location == d_2_location {

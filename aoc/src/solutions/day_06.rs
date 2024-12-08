@@ -90,7 +90,7 @@ impl DaySolution for Solution {
         let initial_path = input
             .simulate()
             .ok_or_else(|| -> Box<dyn Error> { From::from("shouldn't shuck in a loop") })?;
-        let work_to_be_done = Vec::from(initial_path);
+        let work_to_be_done = initial_path;
         let work_index = AtomicUsize::new(0);
         let result = thread::scope(|score| {
             let threads = (0..8)
@@ -119,7 +119,7 @@ impl DaySolution for Solution {
                             input.grid[i][j] = b'.';
                         }
 
-                        return loops;
+                        loops
                     })
                 })
                 .collect::<Vec<_>>();
