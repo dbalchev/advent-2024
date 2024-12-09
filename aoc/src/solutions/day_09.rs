@@ -71,12 +71,116 @@ fn compact(mut disk_map: Vec<Option<i32>>) -> Vec<i32> {
         .expect("should've skipped the empty")
 }
 
+#[derive(Debug)]
+enum DiskChunk {
+    File { id: i32, size: i32 },
+    Empty { size: i32 },
+}
+
+fn to_disk_map_2(input: &str) -> Vec<DiskChunk> {
+    const ZERO: i32 = '0' as i32;
+    let mut char_iterator = input.chars();
+    let mut result = Vec::new();
+    let mut next_id = 0;
+    loop {
+        let file_blocks = if let Some(file_blocks) = char_iterator.next() {
+            file_blocks as i32 - ZERO
+        } else {
+            break;
+        };
+        result.push(DiskChunk::File {
+            id: next_id,
+            size: file_blocks,
+        });
+        let empty_blocks = if let Some(empty_blocks) = char_iterator.next() {
+            empty_blocks as i32 - ZERO
+        } else {
+            break;
+        };
+
+        result.push(DiskChunk::Empty { size: empty_blocks });
+        next_id += 1;
+    }
+    result
+}
+
+fn compact_2(mut disk_map: Vec<DiskChunk>) -> Vec<DiskChunk> {
+    for current_block_index in (0..disk_map.len()).rev() {
+        let (current_block_id, current_block_size) = match disk_map[current_block_index] {
+            DiskChunk::Empty { .. } => continue,
+            DiskChunk::File { id, size } => (id, size),
+        };
+        let (space_index, space_size) = if let Some((space_index, space_size)) = disk_map
+            [0..current_block_index]
+            .iter()
+            .enumerate()
+            .filter_map(|(i, candidate_block)| {
+                if let DiskChunk::Empty { size } = candidate_block {
+                    Some((i, *size))
+                } else {
+                    None
+                }
+            })
+            .find(|(_, empty_size)| *empty_size >= current_block_size)
+        {
+            (space_index, space_size)
+        } else {
+            continue;
+        };
+        if space_size == current_block_size {
+            disk_map.swap(current_block_index, space_index);
+            continue;
+        }
+        disk_map[current_block_index] = DiskChunk::Empty {
+            size: current_block_size,
+        };
+        // no need to compcat disk_map after current_block_index
+        if let DiskChunk::Empty { size } = &mut disk_map[space_index] {
+            *size -= current_block_size;
+        } else {
+            panic!("should be empty");
+        }
+        disk_map.insert(
+            space_index,
+            DiskChunk::File {
+                id: current_block_id,
+                size: current_block_size,
+            },
+        );
+    }
+    disk_map
+}
+
+fn compute_checksum_2(disk_map: &[DiskChunk]) -> i64 {
+    let mut current_index = 0;
+    let mut result = 0;
+    for chunk in disk_map {
+        match chunk {
+            DiskChunk::Empty { size } => current_index += *size as i32,
+            &DiskChunk::File { id, size } => {
+                for _ in 0..size {
+                    result += id as i64 * current_index as i64;
+                    current_index += 1;
+                }
+            }
+        }
+    }
+    result
+}
+
 impl DaySolution for Solution {
     type InputFormat = String;
     fn solve_1(input: &String) -> MyResult<impl Debug + 'static> {
         let disk_map = to_disk_map(&input);
         let compacted = compact(disk_map);
         let checksum = compute_checksum(&compacted);
+        Ok(checksum)
+    }
+    fn solve_2(input: &String) -> MyResult<impl Debug + 'static> {
+        let disk_map = to_disk_map_2(&input);
+        let compacted = compact_2(disk_map);
+        // return Ok(compacted);
+        let checksum = compute_checksum_2(&compacted);
         Ok(checksum)
     }
 }
