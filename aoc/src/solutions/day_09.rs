@@ -9,12 +9,8 @@ fn to_disk_map(input: &str) -> Vec<Option<i32>> {
     let mut char_iterator = input.chars();
     let mut result = Vec::new();
     let mut next_id = 0;
-    loop {
-        let file_blocks = if let Some(file_blocks) = char_iterator.next() {
-            file_blocks as i32 - ZERO
-        } else {
-            break;
-        };
+    while let Some(file_blocks) = char_iterator.next() {
+        let file_blocks = file_blocks as i32 - ZERO;
         for _ in 0..file_blocks {
             result.push(Some(next_id));
         }
@@ -82,12 +78,8 @@ fn to_disk_map_2(input: &str) -> Vec<DiskChunk> {
     let mut char_iterator = input.chars();
     let mut result = Vec::new();
     let mut next_id = 0;
-    loop {
-        let file_blocks = if let Some(file_blocks) = char_iterator.next() {
-            file_blocks as i32 - ZERO
-        } else {
-            break;
-        };
+    while let Some(file_blocks) = char_iterator.next() {
+        let file_blocks = file_blocks as i32 - ZERO;
         result.push(DiskChunk::File {
             id: next_id,
             size: file_blocks,
@@ -156,7 +148,7 @@ fn compute_checksum_2(disk_map: &[DiskChunk]) -> i64 {
     let mut result = 0;
     for chunk in disk_map {
         match chunk {
-            DiskChunk::Empty { size } => current_index += *size as i32,
+            DiskChunk::Empty { size } => current_index += *size,
             &DiskChunk::File { id, size } => {
                 for _ in 0..size {
                     result += id as i64 * current_index as i64;
@@ -171,13 +163,13 @@ fn compute_checksum_2(disk_map: &[DiskChunk]) -> i64 {
 impl DaySolution for Solution {
     type InputFormat = String;
     fn solve_1(input: &String) -> MyResult<impl Debug + 'static> {
-        let disk_map = to_disk_map(&input);
+        let disk_map = to_disk_map(input);
         let compacted = compact(disk_map);
         let checksum = compute_checksum(&compacted);
         Ok(checksum)
     }
     fn solve_2(input: &String) -> MyResult<impl Debug + 'static> {
-        let disk_map = to_disk_map_2(&input);
+        let disk_map = to_disk_map_2(input);
         let compacted = compact_2(disk_map);
         // return Ok(compacted);
         let checksum = compute_checksum_2(&compacted);
