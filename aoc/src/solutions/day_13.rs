@@ -73,12 +73,10 @@ impl ClawMachine {
         self.math_solve(DELTA + self.prize_x, DELTA + self.prize_y)
     }
     fn math_solve(&self, target_x: i64, target_y: i64) -> Option<i64> {
-        // a_press * a_x + b_press * b_x = x
-        // a_press * a_y + b_press * b_y = y
+        // a * a_x + b * b_x = x
+        // a * a_y + b * b_y = y
         // P (a b) = (x y)
         // (a b) = P ^^ -1 (x y)
-        // a = a_x
-        // b = b_x
         let m = [
             [self.a.x_delta, self.b.x_delta],
             [self.a.y_delta, self.b.y_delta],
@@ -91,7 +89,7 @@ impl ClawMachine {
         if a_n % im_d != 0 || b_n % im_d != 0 {
             return None;
         }
-        return Some(a_n / im_d * 3 + b_n / im_d);
+        Some(a_n / im_d * 3 + b_n / im_d)
     }
 }
 
@@ -106,7 +104,7 @@ impl DaySolution for Solution {
             .map(ClawMachine::math_solve_1)
             .collect::<Vec<_>>();
         // Ok(results)
-        Ok(results.into_iter().filter_map(|x| x).sum::<i64>())
+        Ok(results.into_iter().flatten().sum::<i64>())
     }
     fn solve_2(input: &InputFormat) -> MyResult<impl Debug + 'static> {
         let results = input
@@ -115,6 +113,6 @@ impl DaySolution for Solution {
             .map(ClawMachine::math_solve_2)
             .collect::<Vec<_>>();
         // Ok(results)
-        Ok(results.into_iter().filter_map(|x| x).sum::<i64>())
+        Ok(results.into_iter().flatten().sum::<i64>())
     }
 }
