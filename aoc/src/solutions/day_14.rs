@@ -84,4 +84,30 @@ impl DaySolution for Solution {
         }
         Ok(quadrant_counts.into_iter().product::<i64>())
     }
+    fn solve_2(input: &Bathroom) -> MyResult<impl Debug + 'static> {
+        let bathroom_size = input.size();
+
+        for i in 0..10_000 {
+            let line = vec![' '; bathroom_size.0 as usize];
+            let mut grid = vec![line ;bathroom_size.1 as usize];
+            for new_location in  input.robots.iter().map(|r| r.predict(i, bathroom_size)).collect::<Vec<_>>() {
+                grid[new_location.1 as usize][new_location.0 as usize] = 'X';
+            }
+            let mut output = Vec::new();
+            let mut has_sequence = false;
+            for line in grid {
+                let line: String = line.iter().collect::<String>();
+                if line.contains("XXXXXXXXXXXXXXXXXXXXX") {
+                    has_sequence = true;
+                }
+                output.push(line);
+            }
+            if has_sequence {
+                println!("{}", i);
+                println!("{}", output.join("\n"));
+                println!();
+            }
+        }
+        Ok(())
+    }
 }
