@@ -24,6 +24,15 @@ where
     }
 }
 
+#[derive(Debug)]
+pub struct Chars(pub Vec<char>);
+
+impl Parsable for Chars {
+    fn parse(text: &str) -> MyResult<Self> {
+        Ok(Chars(String::parse(text)?.chars().collect::<Vec<_>>()))
+    }
+}
+
 impl<A: Parsable> SeparatorParsable for Vec<A> {
     fn parse_separated_by(text: &str, separator: &Regex) -> MyResult<Self> {
         separator

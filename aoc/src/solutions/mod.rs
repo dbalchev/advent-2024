@@ -16,4 +16,5 @@ register_days! {
     // day_12,
     day_13,
     day_14,
+    day_15,
 }
