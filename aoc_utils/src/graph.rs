@@ -65,7 +65,7 @@ struct ShortestPathState<T, P> {
     min_path_weight: HashMap<T, P>,
 }
 
-impl<'a, T: Hash + Eq + Ord + Clone, PathWeight: Ord + Clone> ShortestPathState<T, PathWeight> {
+impl<T: Hash + Eq + Ord + Clone, PathWeight: Ord + Clone> ShortestPathState<T, PathWeight> {
     fn new() -> ShortestPathState<T, PathWeight> {
         ShortestPathState {
             queue: BinaryHeap::new(),

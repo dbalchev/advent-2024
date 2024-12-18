@@ -27,7 +27,7 @@ impl DaySolution for Solution {
                 }
             }
         }
-        for current in ('0'..'9').rev() {
+        for current in ('0'..='8').rev() {
             let mut new_reachable_ends = input
                 .rows
                 .iter()
@@ -37,8 +37,8 @@ impl DaySolution for Solution {
                 for (j, c) in row.iter_mut().enumerate() {
                     if input.rows[i].0[j] == current {
                         for (di, dj) in [(0, 1), (0, -1), (-1, 0), (1, 0)] {
-                            let ci = (i as i32 + di);
-                            let cj = (j as i32 + dj);
+                            let ci = i as i32 + di;
+                            let cj = j as i32 + dj;
                             let in_bounds = (0..(reachable_ends.len() as i32)).contains(&ci)
                                 && (0..(reachable_ends[ci as usize].len() as i32)).contains(&cj);
                             if in_bounds {
