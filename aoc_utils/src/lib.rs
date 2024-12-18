@@ -3,6 +3,7 @@ use std::error::Error;
 mod aoc_main;
 mod day_solution;
 mod format_struct;
+pub mod graph;
 mod input_paths;
 mod memo;
 mod parsable;
