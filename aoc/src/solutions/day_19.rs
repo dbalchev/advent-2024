@@ -15,15 +15,22 @@ formatted_struct! {
 
 pub struct Solution;
 
-fn is_possible(design: &str, towels: &[String]) -> bool {
+fn count_possibilities(design: &str, towels: &[String]) -> i64 {
     let mut prefix_possible = Vec::with_capacity(design.len() + 1);
-    prefix_possible.push(true);
+    prefix_possible.push(1);
     for prefix_len in 1..=design.len() {
         let prefix = &design[..prefix_len];
         prefix_possible.push(
             towels
                 .iter()
-                .any(|towel| prefix.ends_with(towel) && prefix_possible[prefix_len - towel.len()]),
+                .map(|towel| {
+                    if prefix.ends_with(towel) {
+                        prefix_possible[prefix_len - towel.len()]
+                    } else {
+                        0
+                    }
+                })
+                .sum::<i64>(),
         );
     }
     // println!("{:?}", prefix_possible);
@@ -36,7 +43,14 @@ impl DaySolution for Solution {
         Ok(input
             .designs
             .iter()
-            .map(|d| is_possible(d, &input.towels) as i32)
+            .map(|d| (count_possibilities(d, &input.towels) > 0) as i32)
             .sum::<i32>())
+    }
+    fn solve_2(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+        Ok(input
+            .designs
+            .iter()
+            .map(|d| count_possibilities(d, &input.towels))
+            .sum::<i64>())
     }
 }
