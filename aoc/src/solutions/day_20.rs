@@ -57,36 +57,29 @@ impl InputFormat {
             end_pos.unwrap(),
         )
     }
-}
-
-impl DaySolution for Solution {
-    type InputFormat = InputFormat;
-    fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
-        let (graph, start_pos, end_pos) = input.read_graph();
+    fn count_threshold(&self) -> [i32; 2] {
+        match self.rows.len() {
+            15 => [1, 50],
+            141 => [100, 100],
+            _ => panic!("{}", self.rows.len()),
+        }
+    }
+    fn generic_solve(&self, cheat_threshold: i32, count_threshold: i32) -> (i32, Vec<(i32, i32)>) {
+        let (graph, start_pos, end_pos) = self.read_graph();
         let distance_from_start = graph.shortest_paths(start_pos, |_| false);
         let distance_from_end = graph.shortest_paths(end_pos, |_| false);
-        let mut distance_2_deltas = HashSet::new();
-        let threshold = match input.rows.len() {
-            15 => 1,
-            141 => 100,
-            _ => panic!("{}", input.rows.len()),
-        };
         let no_cheating_distance = distance_from_start(end_pos).unwrap();
-        for d1 in DELTAS {
-            for d2 in DELTAS {
-                let new_entry = (d1.0 + d2.0, d1.1 + d2.1);
-                if new_entry == (0, 0) {
-                    continue;
-                }
-                distance_2_deltas.insert(new_entry);
-            }
-        }
+
         let mut cheat_count = HashMap::new();
-        // let mut c2 = vec![];
-        let mut add_cheat_distance = |cheat_start, cheat_end| {
+        let mut add_cheat_distance = |cheat_start: (i32, i32), cheat_end: (i32, i32)| {
+            let cheat_duration =
+                (cheat_start.0.abs_diff(cheat_end.0) + cheat_start.1.abs_diff(cheat_end.1)) as i32;
+            if cheat_duration > cheat_threshold {
+                return None;
+            }
             let cheat_distance = distance_from_start(cheat_start)? + distance_from_end(cheat_end)?;
-            let saving = no_cheating_distance - cheat_distance - 2;
-            if saving < threshold {
+            let saving = no_cheating_distance - cheat_distance - cheat_duration;
+            if saving < count_threshold {
                 return None;
             }
             // if saving == 2 {
@@ -95,17 +88,26 @@ impl DaySolution for Solution {
             *cheat_count.entry(saving).or_insert(0) += 1;
             Some(())
         };
-        for (i, j) in graph.vertices() {
-            for delta in &distance_2_deltas {
-                let di = i + delta.0;
-                let dj = j + delta.1;
-                add_cheat_distance((i, j), (di, dj));
+        let vertices = graph.vertices();
+        for &v1 in &vertices {
+            for &v2 in &vertices {
+                add_cheat_distance(v1, v2);
             }
         }
-        // c2.sort();
-        // println!("{:?}", c2);
         let mut cheat_count = cheat_count.into_iter().collect::<Vec<_>>();
         cheat_count.sort();
-        Ok((cheat_count.iter().map(|(_, a)| a).sum::<i32>(), cheat_count))
+        let cheat_sum = cheat_count.iter().map(|(_, a)| a).sum::<i32>();
+        cheat_count.truncate(20);
+        (cheat_sum, cheat_count)
+    }
+}
+
+impl DaySolution for Solution {
+    type InputFormat = InputFormat;
+    fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+        Ok(input.generic_solve(2, input.count_threshold()[0]))
+    }
+    fn solve_2(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+        Ok(input.generic_solve(20, input.count_threshold()[1]))
     }
 }
