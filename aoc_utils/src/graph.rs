@@ -1,6 +1,7 @@
 use std::{
     cmp::Reverse,
-    collections::{BinaryHeap, HashMap},
+    collections::{BinaryHeap, HashMap, HashSet},
+    fmt::Debug,
     hash::Hash,
 };
 
@@ -95,13 +96,13 @@ impl<T: Hash + Eq + Ord + Clone, PathWeight: Ord + Clone> ShortestPathState<T, P
 }
 
 impl<
-        T: Hash + Eq + Ord + Clone,
-        PathWeight: Ord + Clone,
-        W: EdgeWeight<PathWeight = PathWeight>,
+        T: Hash + Eq + Ord + Clone + Debug,
+        PathWeight: Ord + Clone + Debug,
+        W: EdgeWeight<PathWeight = PathWeight> + Debug,
     > Graph<T, W>
 {
     pub fn from_edges<ToEdge: Into<Edge<T, W>> + Sized>(
-        edge_iterator: impl Iterator<Item = ToEdge>,
+        edge_iterator: impl IntoIterator<Item = ToEdge>,
     ) -> Graph<T, W> {
         let mut start_to_end_to_weight = HashMap::new();
         for edge in edge_iterator {
@@ -116,12 +117,16 @@ impl<
             start_to_end_to_weight,
         }
     }
-    pub fn shortest_path(&self, from: T, to: T) -> Option<PathWeight> {
+    pub fn shortest_paths(
+        &self,
+        from: T,
+        to_predicate: impl Fn(&T) -> bool,
+    ) -> impl Fn(T) -> Option<PathWeight> {
         let mut state = ShortestPathState::new();
         state.push(from, W::identity());
         while let Some((current, current_path_weight)) = state.pop() {
-            if current == to {
-                return Some(current_path_weight);
+            if to_predicate(&current) {
+                break;
             }
             let current_adj = match self.start_to_end_to_weight.get(&current) {
                 None => continue,
@@ -131,6 +136,17 @@ impl<
                 state.push(next.clone(), edge_weight.madd(&current_path_weight));
             }
         }
-        None
+        move |x| state.min_path_weight.get(&x).cloned()
+    }
+    pub fn vertices(&self) -> HashSet<T> {
+        let mut vertices = self
+            .start_to_end_to_weight
+            .keys()
+            .cloned()
+            .collect::<HashSet<_>>();
+        for tos in self.start_to_end_to_weight.values() {
+            vertices.extend(tos.keys().cloned());
+        }
+        vertices
     }
 }
