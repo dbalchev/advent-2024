@@ -18,12 +18,13 @@ pub struct Solution;
 const DELTAS: [(i32, i32); 4] = [(1, 0), (0, 1), (-1, 0), (0, -1)];
 
 impl InputFormat {
+    #[allow(clippy::type_complexity)]
     fn read_graph(&self) -> (Graph<(i32, i32), ()>, (i32, i32), (i32, i32)) {
         let mut edges = HashSet::new();
         let mut start_pos = None;
         let mut end_pos = None;
         for i in 1..(self.rows.len() - 1) {
-            for j in (1..self.rows[i].0.len() - 1) {
+            for j in 1..self.rows[i].0.len() - 1 {
                 let current_char = self.rows[i].0[j];
                 let current_pos = Some((i as i32, j as i32));
                 match current_char {
