@@ -1,31 +1,16 @@
 use std::{
-    cmp::Ordering,
-    collections::{hash_map::Entry, HashMap, HashSet},
+    collections::{HashMap, HashSet},
     fmt::Debug,
+    hash::Hash,
 };
 
-use aoc_utils::{formatted_struct, Chars, DaySolution, MyResult};
-
-formatted_struct! {
-    #[derive(Debug)]
-    pub enum Instruction {
-        Set {
-            name:String,
-            "=",
-            value: i32,
-        },
-        Dash {
-            name: String,
-            "-",
-        },
-    }
-}
+use aoc_utils::{formatted_struct, DaySolution, MyResult};
 
 formatted_struct! {
     #[derive(Debug)]
     pub struct InputFormat {
         #[separated_by="\n"]
-        instructions: Vec<Chars>,
+        instructions: Vec<String>,
     }
 }
 
@@ -40,16 +25,28 @@ const NUMPAD: [[char; 3]; 4] = [
 
 const DPAD: [[char; 3]; 2] = [[' ', '^', 'A'], ['<', 'v', '>']];
 
-macro_rules! hashset {
-    ($v:expr) => {{
-        {
-            let mut result = HashSet::new();
-            result.insert($v);
-            result
+fn permutations<T: Clone + Eq + Hash>(items: &[T]) -> Vec<Vec<T>> {
+    let mut beam = vec![(items, Vec::new())];
+    let mut result = HashSet::new();
+
+    while let Some((remaining, local_result)) = beam.pop() {
+        let (first, next) = match remaining.split_first() {
+            Some((first, next)) => (first, next),
+            None => {
+                result.insert(local_result);
+                continue;
+            }
+        };
+        for insertion in 0..=(local_result.len()) {
+            let mut local_result = local_result.clone();
+            local_result.insert(insertion, first.clone());
+            beam.push((next, local_result));
         }
-    }};
+    }
+
+    result.into_iter().collect::<Vec<_>>()
 }
-#[allow(clippy::needless_range_loop, clippy::string_extend_chars)]
+
 fn generate_keyboard_paths<const N: usize, const M: usize>(
     keyboard: &[[char; M]; N],
 ) -> HashMap<(char, char), Vec<String>> {
@@ -74,120 +71,109 @@ fn generate_keyboard_paths<const N: usize, const M: usize>(
             let dy = char_to_coordinates[i].0 as i32 - char_to_coordinates[j].0 as i32;
             let dx = char_to_coordinates[i].1 as i32 - char_to_coordinates[j].1 as i32;
 
-            let connection = match (dx, dy) {
-                (0, 0) => hashset!["".to_string()],
-                (-1, 0) => hashset!['>'.to_string()],
-                (1, 0) => hashset!['<'.to_string()],
-                (0, -1) => hashset!['v'.to_string()],
-                (0, 1) => hashset!['^'.to_string()],
-                _ => continue,
-            };
-            result.insert((*i, *j), connection);
-        }
-    }
-    let mut update_shortest_path = |i, j, k| {
-        let ik = result.get(&(i, k))?.clone();
-        let kj = result.get(&(k, j))?.clone();
-
-        let add_ikj = |ij: &mut HashSet<String>| {
-            for a in &ik {
-                for b in &kj {
-                    let mut r = String::with_capacity(a.len() + b.len());
-                    r.extend(a.chars());
-                    r.extend(b.chars());
-                    ij.insert(r);
+            let mut path = Vec::new();
+            if dx < 0 {
+                for _ in 0..(-dx) {
+                    path.push('>');
+                }
+            } else if dx > 0 {
+                for _ in 0..(dx) {
+                    path.push('<');
                 }
             }
-        };
-        match result.entry((i, j)) {
-            Entry::Occupied(mut occupied) => {
-                let original = occupied.get_mut();
-                match original
-                    .iter()
-                    .next()
-                    .unwrap()
-                    .len()
-                    .cmp(&(ik.iter().next().unwrap().len() + kj.iter().next().unwrap().len()))
-                {
-                    Ordering::Less => return None,
-                    Ordering::Greater => {
-                        original.clear();
-                    }
-                    Ordering::Equal => (),
-                }
-                add_ikj(original);
-            }
-            Entry::Vacant(vacant) => add_ikj(vacant.insert(HashSet::new())),
-        };
 
-        Some(())
-    };
-    for &i in &chars {
-        for &j in &chars {
-            for &k in &chars {
-                update_shortest_path(i, j, k);
+            if dy < 0 {
+                for _ in 0..(-dy) {
+                    path.push('v');
+                }
+            } else {
+                for _ in 0..dy {
+                    path.push('^');
+                }
             }
+
+            result.insert(
+                (*i, *j),
+                permutations(&path)
+                    .into_iter()
+                    .map(|v| String::from_iter(&v))
+                    .collect::<Vec<_>>(),
+            );
         }
     }
     result
+}
+
+fn translate_path(
+    paths: &[String],
+    paths_to_buttons: &HashMap<(char, char), Vec<String>>,
+) -> Vec<String> {
+    let mut beam = paths
+        .iter()
+        .map(|path| ('A', path.as_str(), String::new()))
+        .collect::<Vec<_>>();
+    let mut result = Vec::new();
+    while let Some((current_char, remaining_path, current_result)) = beam.pop() {
+        if remaining_path.is_empty() {
+            result.push(current_result);
+            continue;
+        }
+        let (current_str, remaining_path) = remaining_path.split_at(1);
+        let next_button = current_str.chars().next().unwrap();
+        for continuation in paths_to_buttons.get(&(current_char, next_button)).unwrap() {
+            let mut current_result = current_result.clone();
+            current_result.extend(continuation.chars());
+            current_result.push('A');
+            beam.push((next_button, remaining_path, current_result))
+        }
+    }
+    result
+}
+
+fn trim(result: Vec<String>) -> Vec<String> {
+    let min = result.iter().map(String::len).min().unwrap();
+    let threshold = 0;
+    // let initial_size = result.len();
+    let result = result
         .into_iter()
-        .map(|(k, v)| {
-            let mut v = v.into_iter().collect::<Vec<_>>();
-            v.sort();
-            (k, v)
-        })
-        .collect::<HashMap<_, Vec<_>>>()
-}
-
-#[allow(unused)]
-fn generate_collection_path_lengths(
-    lower_path_lengths: &HashMap<(Vec<char>, Vec<char>), usize>,
-    higher_paths: &HashMap<(char, char), Vec<String>>,
-    all_higher_chars: &[char],
-) -> HashMap<(Vec<char>, Vec<char>), usize> {
-    let mut result = HashMap::new();
-    let all_lower_paths = &lower_path_lengths
-        .keys()
-        .flat_map(|(a, b)| [a, b])
-        .cloned()
-        .collect::<HashSet<_>>();
-    let mut lower_paths_ending_in = HashMap::with_capacity(all_higher_chars.len());
-    for lower_path in all_lower_paths {
-        lower_paths_ending_in
-            .entry(*lower_path.last().unwrap())
-            .or_insert_with(Vec::new)
-            .push(lower_path);
-    }
-    for lower_path_start in all_lower_paths {
-        for lower_path_end in all_lower_paths {
-            for &higher_char_start in all_higher_chars {
-                for &higher_char_end in all_higher_chars {
-                    let mut best_path_length = usize::MAX;
-                    for higher_path in higher_paths
-                        .get(&(higher_char_start, higher_char_end))
-                        .unwrap()
-                    {
-                        let mut current_state_lengths = HashMap::new();
-                        current_state_lengths.insert(lower_path_start.clone(), 0);
-                    }
-                }
-            }
-        }
-    }
+        .filter(|s| s.len() <= min + threshold)
+        .collect::<Vec<_>>();
+    // println!("trim {} to {}", initial_size, result.len());
     result
 }
 
-#[allow(unused)]
 impl DaySolution for Solution {
     type InputFormat = InputFormat;
     fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
         let numpad_paths = generate_keyboard_paths(&NUMPAD);
         let dpad_paths = generate_keyboard_paths(&DPAD);
-        let order_1_path_lengths = ();
-        Ok(format!(
-            "Hello {:?}",
-            [numpad_paths.get(&('A', '7')), numpad_paths.get(&('7', 'A'))]
-        ))
+        let mut sum = 0;
+        for code in &input.instructions {
+            let numpad_path = trim(translate_path(&[code.clone()], &numpad_paths));
+            // println!(
+            //     "numpad_path {} {}",
+            //     numpad_path.len(),
+            //     numpad_path.iter().map(String::len).min().unwrap()
+            // );
+            let dpad_path_1 = trim(translate_path(&numpad_path, &dpad_paths));
+            // println!(
+            //     "dpad_path_1 {} {}",
+            //     dpad_path_1.len(),
+            //     dpad_path_1.iter().map(String::len).min().unwrap()
+            // );
+            let dpad_path_2 = trim(translate_path(&dpad_path_1, &dpad_paths));
+            // println!(
+            //     "dpad_path_2 {} {}",
+            //     dpad_path_2.len(),
+            //     dpad_path_2.iter().map(String::len).min().unwrap()
+            // );
+            // let computed_paths = [numpad_path, dpad_path_1, dpad_path_2];
+            let min_path = dpad_path_2.iter().map(String::len).min().unwrap();
+            let num_code = code.trim_end_matches('A').parse::<i32>()?;
+            println!("{}", min_path);
+            sum += min_path as i32 * num_code;
+        }
+        Ok(sum)
     }
     fn preferred_sample_input() -> i32 {
         3
