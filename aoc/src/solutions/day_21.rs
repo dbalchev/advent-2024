@@ -91,12 +91,29 @@ fn generate_keyboard_paths<const N: usize, const M: usize>(
                     path.push('^');
                 }
             }
+            let ensure_no_gaps = |path| {
+                let (mut y, mut x) = char_to_coordinates[i];
+                let space_coords = char_to_coordinates[&' '];
+                for &c in &path {
+                    match c {
+                        '>' => x += 1,
+                        '<' => x -= 1,
+                        '^' => y -= 1,
+                        'v' => y += 1,
+                        _ => panic!("{}", c),
+                    };
+                    if (y, x) == space_coords {
+                        return None;
+                    }
+                }
+                Some(String::from_iter(path))
+            };
 
             result.insert(
                 (*i, *j),
                 permutations(&path)
                     .into_iter()
-                    .map(|v| String::from_iter(&v))
+                    .filter_map(ensure_no_gaps)
                     .collect::<Vec<_>>(),
             );
         }
@@ -132,13 +149,13 @@ fn translate_path(
 
 fn trim(result: Vec<String>) -> Vec<String> {
     let min = result.iter().map(String::len).min().unwrap();
-    let threshold = 0;
-    // let initial_size = result.len();
+    let threshold = 1;
+    let initial_size = result.len();
     let result = result
         .into_iter()
         .filter(|s| s.len() <= min + threshold)
         .collect::<Vec<_>>();
-    // println!("trim {} to {}", initial_size, result.len());
+    println!("trim {} to {}", initial_size, result.len());
     result
 }
 
@@ -169,9 +186,9 @@ impl DaySolution for Solution {
             // );
             // let computed_paths = [numpad_path, dpad_path_1, dpad_path_2];
             let min_path = dpad_path_2.iter().map(String::len).min().unwrap();
-            let num_code = code.trim_end_matches('A').parse::<i32>()?;
+            let num_code = code.trim_end_matches('A').parse::<i64>()?;
             println!("{}", min_path);
-            sum += min_path as i32 * num_code;
+            sum += min_path as i64 * num_code;
         }
         Ok(sum)
     }
