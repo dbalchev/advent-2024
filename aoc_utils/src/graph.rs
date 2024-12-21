@@ -98,7 +98,7 @@ impl<T: Hash + Eq + Ord + Clone, PathWeight: Ord + Clone> ShortestPathState<T, P
 impl<
         T: Hash + Eq + Ord + Clone + Debug,
         PathWeight: Ord + Clone + Debug,
-        W: EdgeWeight<PathWeight = PathWeight> + Debug,
+        W: EdgeWeight<PathWeight = PathWeight> + Debug + Clone,
     > Graph<T, W>
 {
     pub fn from_edges<ToEdge: Into<Edge<T, W>> + Sized>(
@@ -148,5 +148,16 @@ impl<
             vertices.extend(tos.keys().cloned());
         }
         vertices
+    }
+    pub fn edges_of<'a>(&'a self, v: &'a T) -> impl IntoIterator<Item = Edge<T, W>> + 'a {
+        self.start_to_end_to_weight
+            .get(&v)
+            .unwrap()
+            .iter()
+            .map(|(u, w)| Edge {
+                from: v.clone(),
+                to: u.clone(),
+                weight: w.clone(),
+            })
     }
 }

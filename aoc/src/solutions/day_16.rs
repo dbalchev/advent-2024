@@ -1,6 +1,13 @@
-use std::fmt::Debug;
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+};
 
-use aoc_utils::{formatted_struct, graph::Graph, Chars, DaySolution, MyResult};
+use aoc_utils::{
+    formatted_struct,
+    graph::{Edge, Graph},
+    Chars, DaySolution, MyResult,
+};
 
 formatted_struct! {
     #[derive(Debug)]
@@ -76,12 +83,51 @@ impl DaySolution for Solution {
     type InputFormat = InputFormat;
     fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
         let (graph, start, end) = input.read_graph();
-        let distance_function = graph.shortest_paths((start, Horizontal), |_| false);
+        let distance_function =
+            graph.shortest_paths((start, Horizontal), |&(current, _)| current == end);
         let results = [Horizontal, Vertical]
             .into_iter()
             .flat_map(|o| distance_function((end, o)))
             .min()
             .unwrap();
         Ok(results)
+    }
+    fn solve_2(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+        let (graph, start, end) = input.read_graph();
+        let distance_function = graph.shortest_paths((start, Horizontal), |_| false);
+        let best_path_length = [Horizontal, Vertical]
+            .into_iter()
+            .flat_map(|o| distance_function((end, o)))
+            .min()
+            .unwrap();
+        let mut on_best_path = HashSet::new();
+        let mut on_best_path_unprocessed = Vec::new();
+        for o in [Horizontal, Vertical] {
+            let v = (end, o);
+            if distance_function(v.clone()) == Some(best_path_length) {
+                on_best_path.insert(v.clone());
+                on_best_path_unprocessed.push((v, best_path_length));
+            }
+        }
+        while let Some((current_v, current_distance)) = on_best_path_unprocessed.pop() {
+            for Edge {
+                to: adj, weight, ..
+            } in graph.edges_of(&current_v)
+            {
+                let expected_distance = current_distance - weight;
+                if distance_function(adj.clone()) != Some(expected_distance) {
+                    continue;
+                }
+                let is_adj_new = on_best_path.insert(adj.clone());
+                if is_adj_new {
+                    on_best_path_unprocessed.push((adj, expected_distance))
+                }
+            }
+        }
+        let on_best_path_no_orientation = on_best_path
+            .into_iter()
+            .map(|(v, _o)| v)
+            .collect::<HashSet<_>>();
+        Ok(on_best_path_no_orientation.len())
     }
 }
