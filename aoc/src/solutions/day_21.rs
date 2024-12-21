@@ -2,7 +2,6 @@ use std::{
     cmp::Ordering,
     collections::{hash_map::Entry, HashMap, HashSet},
     fmt::Debug,
-    usize,
 };
 
 use aoc_utils::{formatted_struct, Chars, DaySolution, MyResult};
@@ -50,7 +49,7 @@ macro_rules! hashset {
         }
     }};
 }
-
+#[allow(clippy::needless_range_loop, clippy::string_extend_chars)]
 fn generate_keyboard_paths<const N: usize, const M: usize>(
     keyboard: &[[char; M]; N],
 ) -> HashMap<(char, char), Vec<String>> {
@@ -140,6 +139,7 @@ fn generate_keyboard_paths<const N: usize, const M: usize>(
         .collect::<HashMap<_, Vec<_>>>()
 }
 
+#[allow(unused)]
 fn generate_collection_path_lengths(
     lower_path_lengths: &HashMap<(Vec<char>, Vec<char>), usize>,
     higher_paths: &HashMap<(char, char), Vec<String>>,
@@ -177,6 +177,7 @@ fn generate_collection_path_lengths(
     result
 }
 
+#[allow(unused)]
 impl DaySolution for Solution {
     type InputFormat = InputFormat;
     fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
