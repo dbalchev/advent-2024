@@ -89,7 +89,7 @@ fn label_sides_score(labels: &[Vec<i32>], target_label: i32) -> (i32, i32) {
     let mut area = 0;
 
     let flex_label = |i, j| {
-        if (0..mi as isize).contains(&i) && (0..mj as isize).contains(&j) {
+        if (0..mi).contains(&i) && (0..mj).contains(&j) {
             labels[i as usize][j as usize]
         } else {
             -1
