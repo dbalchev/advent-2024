@@ -75,7 +75,7 @@ impl<T: Hash + Eq + Ord + Clone, PathWeight: Ord + Clone> ShortestPathState<T, P
     }
     fn push(&mut self, current: T, path_weight: PathWeight) {
         if let Some(old_path_weight) = self.min_path_weight.get(&current) {
-            if *old_path_weight < path_weight {
+            if *old_path_weight <= path_weight {
                 return;
             }
         }
