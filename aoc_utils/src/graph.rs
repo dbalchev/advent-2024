@@ -151,7 +151,7 @@ impl<
     }
     pub fn edges_of<'a>(&'a self, v: &'a T) -> impl IntoIterator<Item = Edge<T, W>> + 'a {
         self.start_to_end_to_weight
-            .get(&v)
+            .get(v)
             .unwrap()
             .iter()
             .map(|(u, w)| Edge {

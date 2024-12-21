@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashSet,
     fmt::Debug,
 };
 
@@ -39,7 +39,7 @@ impl InputFormat {
         for i in 1..(self.rows.len() - 1) {
             for j in 1..self.rows[i].0.len() - 1 {
                 let current_char = self.rows[i].0[j];
-                let current_pos = Some((i as usize, j as usize));
+                let current_pos = Some((i, j));
                 match current_char {
                     'S' => {
                         assert!(start_pos.is_none());
