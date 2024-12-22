@@ -53,7 +53,7 @@ fn generate_keyboard_paths<const N: usize, const M: usize>(
     let mut char_to_coordinates = HashMap::with_capacity(N * M);
     for (i, row) in keyboard.iter().enumerate() {
         for (j, button) in row.iter().enumerate() {
-            char_to_coordinates.insert(button, (i, j));
+            char_to_coordinates.insert(*button, (i, j));
         }
     }
     let char_to_coordinates = char_to_coordinates;
