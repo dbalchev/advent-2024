@@ -152,7 +152,42 @@ fn translate_path(
     result
 }
 
-fn trim(result: Vec<String>) -> Vec<String> {
+fn prune_paths(
+    paths_per_char_pair: &HashMap<(char, char), Vec<String>>,
+    lower_paths: &HashMap<(char, char), Vec<String>>,
+) -> HashMap<(char, char), Vec<String>> {
+    paths_per_char_pair
+        .iter()
+        .map(|(char_pair, paths)| {
+            let best_paths = paths
+                .iter()
+                .cloned()
+                .map(|path| {
+                    let variants = translate_path(&[path.clone()], lower_paths);
+                    let variants = trim(variants, false);
+                    let variants = translate_path(&variants, &lower_paths);
+                    (path, variants.iter().map(String::len).min().unwrap())
+                })
+                .collect::<Vec<_>>();
+            let optimum_length = best_paths.iter().map(|(_, l)| *l).min().unwrap();
+            (
+                *char_pair,
+                best_paths
+                    .into_iter()
+                    .filter_map(|(path, len)| {
+                        if len <= optimum_length {
+                            Some(path)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .collect::<HashMap<_, _>>()
+}
+
+fn trim(result: Vec<String>, should_print: bool) -> Vec<String> {
     let min = result.iter().map(String::len).min().unwrap();
     let threshold = 1;
     let initial_size = result.len();
@@ -160,7 +195,9 @@ fn trim(result: Vec<String>) -> Vec<String> {
         .into_iter()
         .filter(|s| s.len() <= min + threshold)
         .collect::<Vec<_>>();
-    println!("trim {} to {}", initial_size, result.len());
+    if should_print {
+        println!("trim {} to {}", initial_size, result.len());
+    }
     result
 }
 
@@ -169,21 +206,25 @@ impl DaySolution for Solution {
     fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
         let numpad_paths = generate_keyboard_paths(&NUMPAD);
         let dpad_paths = generate_keyboard_paths(&DPAD);
+        let dpad_paths = prune_paths(&dpad_paths, &dpad_paths);
+        let dpad_paths = prune_paths(&dpad_paths, &dpad_paths);
+        let numpad_paths = prune_paths(&numpad_paths, &dpad_paths);
+        let numpad_paths = prune_paths(&numpad_paths, &dpad_paths);
         let mut sum = 0;
         for code in &input.instructions {
-            let numpad_path = trim(translate_path(&[code.clone()], &numpad_paths));
+            let numpad_path = trim(translate_path(&[code.clone()], &numpad_paths), true);
             // println!(
             //     "numpad_path {} {}",
             //     numpad_path.len(),
             //     numpad_path.iter().map(String::len).min().unwrap()
             // );
-            let dpad_path_1 = trim(translate_path(&numpad_path, &dpad_paths));
+            let dpad_path_1 = trim(translate_path(&numpad_path, &dpad_paths), true);
             // println!(
             //     "dpad_path_1 {} {}",
             //     dpad_path_1.len(),
             //     dpad_path_1.iter().map(String::len).min().unwrap()
             // );
-            let dpad_path_2 = trim(translate_path(&dpad_path_1, &dpad_paths));
+            let dpad_path_2 = trim(translate_path(&dpad_path_1, &dpad_paths), true);
             // println!(
             //     "dpad_path_2 {} {}",
             //     dpad_path_2.len(),
