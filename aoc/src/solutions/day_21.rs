@@ -47,18 +47,13 @@ fn permutations<T: Clone + Eq + Hash>(items: &[T]) -> Vec<Vec<T>> {
     result.into_iter().collect::<Vec<_>>()
 }
 
-#[allow(
-    clippy::needless_range_loop,
-    clippy::same_item_push,
-    clippy::comparison_chain
-)]
 fn generate_keyboard_paths<const N: usize, const M: usize>(
     keyboard: &[[char; M]; N],
 ) -> HashMap<(char, char), Vec<String>> {
     let mut char_to_coordinates = HashMap::with_capacity(N * M);
-    for i in 0..N {
-        for j in 0..M {
-            char_to_coordinates.insert(keyboard[i][j], (i, j));
+    for (i, row) in keyboard.iter().enumerate() {
+        for (j, button) in row.iter().enumerate() {
+            char_to_coordinates.insert(button, (i, j));
         }
     }
     let char_to_coordinates = char_to_coordinates;
@@ -76,26 +71,11 @@ fn generate_keyboard_paths<const N: usize, const M: usize>(
             let dy = char_to_coordinates[i].0 as i32 - char_to_coordinates[j].0 as i32;
             let dx = char_to_coordinates[i].1 as i32 - char_to_coordinates[j].1 as i32;
 
-            let mut path = Vec::new();
-            if dx < 0 {
-                for _ in 0..(-dx) {
-                    path.push('>');
-                }
-            } else if dx > 0 {
-                for _ in 0..(dx) {
-                    path.push('<');
-                }
-            }
-
-            if dy < 0 {
-                for _ in 0..(-dy) {
-                    path.push('v');
-                }
-            } else {
-                for _ in 0..dy {
-                    path.push('^');
-                }
-            }
+            let mut path = vec![if dx < 0 { '>' } else { '<' }; dx.unsigned_abs() as usize];
+            path.resize(
+                path.len() + dy.unsigned_abs() as usize,
+                if dy < 0 { 'v' } else { '^' },
+            );
             let ensure_no_gaps = |path| {
                 let (mut y, mut x) = char_to_coordinates[i];
                 let space_coords = char_to_coordinates[&' '];
@@ -187,7 +167,7 @@ fn prune_paths(
                     let mut variants = translate_path(&[path.clone()], lower_paths);
                     for _ in 0..prune_steps {
                         variants = trim(variants, false);
-                        variants = translate_path(&variants, &lower_paths);
+                        variants = translate_path(&variants, lower_paths);
                     }
                     (path, variants.iter().map(String::len).min().unwrap())
                 })
