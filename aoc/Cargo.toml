@@ -7,3 +7,4 @@ default-run = "aoc"
 [dependencies]
 "aoc_utils" = { path="../aoc_utils" }
 regex = "1.11.1"
+rayon = "1.10.0"
