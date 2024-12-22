@@ -47,6 +47,11 @@ fn permutations<T: Clone + Eq + Hash>(items: &[T]) -> Vec<Vec<T>> {
     result.into_iter().collect::<Vec<_>>()
 }
 
+#[allow(
+    clippy::needless_range_loop,
+    clippy::same_item_push,
+    clippy::comparison_chain
+)]
 fn generate_keyboard_paths<const N: usize, const M: usize>(
     keyboard: &[[char; M]; N],
 ) -> HashMap<(char, char), Vec<String>> {
@@ -139,7 +144,7 @@ fn translate_path(
         let next_button = current_str.chars().next().unwrap();
         for continuation in paths_to_buttons.get(&(current_char, next_button)).unwrap() {
             let mut current_result = current_result.clone();
-            current_result.extend(continuation.chars());
+            current_result.push_str(continuation);
             current_result.push('A');
             beam.push((next_button, remaining_path, current_result))
         }
