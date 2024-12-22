@@ -248,13 +248,13 @@ fn general_solve(input: &InputFormat, n_indirections: i32) -> i64 {
             resulting_paths = cached_translate_path(&resulting_paths, &dpad_paths);
         }
         let min_path = resulting_paths
-            .iter()
+            .into_iter()
             .map(|tp| tp.into_iter().map(|(s, c)| s.len() as i64 * c).sum::<i64>())
             .min()
             .unwrap();
         let num_code = code.trim_end_matches('A').parse::<i64>().unwrap();
         println!("{}", min_path);
-        sum += min_path as i64 * num_code;
+        sum += min_path * num_code;
     }
     sum
 }
