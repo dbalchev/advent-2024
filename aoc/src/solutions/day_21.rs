@@ -152,9 +152,30 @@ fn translate_path(
     result
 }
 
+fn cached_translate_path(
+    paths: &[HashMap<String, i64>],
+    paths_to_buttons: &HashMap<(char, char), Vec<String>>,
+) -> Vec<HashMap<String, i64>> {
+    paths
+        .iter()
+        .map(|segment_counts| {
+            let mut result = HashMap::new();
+            for (segment, count) in segment_counts {
+                let translated = translate_path(&[segment.clone()], paths_to_buttons);
+                assert_eq!(translated.len(), 1);
+                for new_segment in translated[0].split_inclusive("A") {
+                    *result.entry(new_segment.to_string()).or_insert(0) += count;
+                }
+            }
+            result
+        })
+        .collect::<Vec<_>>()
+}
+
 fn prune_paths(
     paths_per_char_pair: &HashMap<(char, char), Vec<String>>,
     lower_paths: &HashMap<(char, char), Vec<String>>,
+    prune_steps: i32,
 ) -> HashMap<(char, char), Vec<String>> {
     paths_per_char_pair
         .iter()
@@ -163,9 +184,11 @@ fn prune_paths(
                 .iter()
                 .cloned()
                 .map(|path| {
-                    let variants = translate_path(&[path.clone()], lower_paths);
-                    let variants = trim(variants, false);
-                    let variants = translate_path(&variants, &lower_paths);
+                    let mut variants = translate_path(&[path.clone()], lower_paths);
+                    for _ in 0..prune_steps {
+                        variants = trim(variants, false);
+                        variants = translate_path(&variants, &lower_paths);
+                    }
                     (path, variants.iter().map(String::len).min().unwrap())
                 })
                 .collect::<Vec<_>>();
@@ -189,7 +212,7 @@ fn prune_paths(
 
 fn trim(result: Vec<String>, should_print: bool) -> Vec<String> {
     let min = result.iter().map(String::len).min().unwrap();
-    let threshold = 1;
+    let threshold = 5;
     let initial_size = result.len();
     let result = result
         .into_iter()
@@ -201,42 +224,48 @@ fn trim(result: Vec<String>, should_print: bool) -> Vec<String> {
     result
 }
 
+fn general_solve(input: &InputFormat, n_indirections: i32) -> i64 {
+    let numpad_paths = generate_keyboard_paths(&NUMPAD);
+    let dpad_paths = generate_keyboard_paths(&DPAD);
+    let dpad_paths = prune_paths(&dpad_paths, &dpad_paths, 1);
+    // let dpad_paths = prune_paths(&dpad_paths, &dpad_paths, 2);
+    let dpad_paths = prune_paths(&dpad_paths, &dpad_paths, 3);
+    // let numpad_paths = prune_paths(&numpad_paths, &dpad_paths, 1);
+    // let numpad_paths = prune_paths(&numpad_paths, &dpad_paths, 1);
+    let mut sum = 0;
+    for code in &input.instructions {
+        let numpad_path = trim(translate_path(&[code.clone()], &numpad_paths), true);
+        let resulting_paths = numpad_path;
+        let mut resulting_paths = resulting_paths
+            .into_iter()
+            .map(|p| {
+                let mut r = HashMap::new();
+                r.insert(p, 1);
+                r
+            })
+            .collect::<Vec<_>>();
+        for _ in 0..n_indirections {
+            resulting_paths = cached_translate_path(&resulting_paths, &dpad_paths);
+        }
+        let min_path = resulting_paths
+            .iter()
+            .map(|tp| tp.into_iter().map(|(s, c)| s.len() as i64 * c).sum::<i64>())
+            .min()
+            .unwrap();
+        let num_code = code.trim_end_matches('A').parse::<i64>().unwrap();
+        println!("{}", min_path);
+        sum += min_path as i64 * num_code;
+    }
+    sum
+}
+
 impl DaySolution for Solution {
     type InputFormat = InputFormat;
     fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
-        let numpad_paths = generate_keyboard_paths(&NUMPAD);
-        let dpad_paths = generate_keyboard_paths(&DPAD);
-        let dpad_paths = prune_paths(&dpad_paths, &dpad_paths);
-        let dpad_paths = prune_paths(&dpad_paths, &dpad_paths);
-        let numpad_paths = prune_paths(&numpad_paths, &dpad_paths);
-        let numpad_paths = prune_paths(&numpad_paths, &dpad_paths);
-        let mut sum = 0;
-        for code in &input.instructions {
-            let numpad_path = trim(translate_path(&[code.clone()], &numpad_paths), true);
-            // println!(
-            //     "numpad_path {} {}",
-            //     numpad_path.len(),
-            //     numpad_path.iter().map(String::len).min().unwrap()
-            // );
-            let dpad_path_1 = trim(translate_path(&numpad_path, &dpad_paths), true);
-            // println!(
-            //     "dpad_path_1 {} {}",
-            //     dpad_path_1.len(),
-            //     dpad_path_1.iter().map(String::len).min().unwrap()
-            // );
-            let dpad_path_2 = trim(translate_path(&dpad_path_1, &dpad_paths), true);
-            // println!(
-            //     "dpad_path_2 {} {}",
-            //     dpad_path_2.len(),
-            //     dpad_path_2.iter().map(String::len).min().unwrap()
-            // );
-            // let computed_paths = [numpad_path, dpad_path_1, dpad_path_2];
-            let min_path = dpad_path_2.iter().map(String::len).min().unwrap();
-            let num_code = code.trim_end_matches('A').parse::<i64>()?;
-            println!("{}", min_path);
-            sum += min_path as i64 * num_code;
-        }
-        Ok(sum)
+        Ok(general_solve(input, 2))
+    }
+    fn solve_2(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+        Ok(general_solve(input, 25))
     }
     fn preferred_sample_input() -> i32 {
         3
