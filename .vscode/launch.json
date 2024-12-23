@@ -1,0 +1,87 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'aoc_utils'",
+            "cargo": {
+                "args": ["test", "--no-run", "--lib", "--package=aoc_utils"],
+                "filter": {
+                    "name": "aoc_utils",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'aoc'",
+            "cargo": {
+                "args": ["build", "--bin=aoc", "--package=aoc"],
+                "filter": {
+                    "name": "aoc",
+                    "kind": "bin"
+                }
+            },
+            "args": ["--day", "15", "--sample"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'aoc'",
+            "cargo": {
+                "args": ["test", "--no-run", "--bin=aoc", "--package=aoc"],
+                "filter": {
+                    "name": "aoc",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'aoc_data_downloader'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=aoc_data_downloader",
+                    "--package=aoc_data_downloader"
+                ],
+                "filter": {
+                    "name": "aoc_data_downloader",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'aoc_data_downloader'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=aoc_data_downloader",
+                    "--package=aoc_data_downloader"
+                ],
+                "filter": {
+                    "name": "aoc_data_downloader",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
