@@ -33,21 +33,19 @@ impl InputFormat {
             ]
         })
     }
-}
-
-impl DaySolution for Solution {
-    type InputFormat = InputFormat;
-    fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+    fn compute_adj(&self) -> HashMap<String, HashSet<String>> {
         let mut adj = HashMap::new();
 
-        for (u, v) in input.all_edges() {
+        for (u, v) in self.all_edges() {
             adj.entry(u.to_string())
                 .or_insert_with(HashSet::new)
                 .insert(v.to_string());
         }
-        let triplets = input
-            .all_edges()
-            .flat_map(|(u, v)| {
+        adj
+    }
+    fn clique_3<'a>(&'a self, adj: &'a HashMap<String, HashSet<String>>) -> HashSet<Vec<&'a str>> {
+        self.all_edges()
+            .flat_map(move |(u, v)| {
                 adj[u].intersection(&adj[v]).map(move |t| {
                     let mut r = HashSet::with_capacity(3);
                     r.insert(u);
@@ -56,14 +54,62 @@ impl DaySolution for Solution {
                     r
                 })
             })
-            .filter(|clique| clique.len() == 3 && clique.iter().any(|&u| u.starts_with('t')))
+            .filter(|clique| clique.len() == 3)
             .map(|clique| {
                 let mut clique = Vec::from_iter(clique);
                 clique.sort();
                 clique
             })
-            .collect::<HashSet<_>>();
+            .collect::<HashSet<_>>()
+    }
+}
 
-        Ok(triplets.len())
+impl DaySolution for Solution {
+    type InputFormat = InputFormat;
+    fn solve_1(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+        let adj = input.compute_adj();
+        Ok(input
+            .clique_3(&adj)
+            .iter()
+            .filter(|&triplet| triplet.iter().any(|&u| u.starts_with('t')))
+            .count())
+    }
+    fn solve_2(input: &InputFormat) -> MyResult<impl Debug + 'static> {
+        let adj = input.compute_adj();
+        let cliques = Vec::from_iter(input.clique_3(&adj));
+        let adj = adj
+            .iter()
+            .map(|(u, vs)| {
+                (
+                    u.as_str(),
+                    vs.iter().map(String::as_str).collect::<HashSet<_>>(),
+                )
+            })
+            .collect::<HashMap<_, _>>();
+        let mut cliques = Vec::from_iter(cliques);
+        loop {
+            let mut new_cliques = HashSet::new();
+
+            for clique in &cliques {
+                for &v in adj.keys() {
+                    if v <= clique.last().unwrap() {
+                        continue;
+                    }
+                    let adj_v = adj.get(v).unwrap();
+                    if clique.iter().any(|&u| !adj_v.contains(u)) {
+                        continue;
+                    }
+                    let mut new_clique = clique.clone();
+                    new_clique.push(v);
+                    new_cliques.insert(new_clique);
+                }
+            }
+            if new_cliques.is_empty() {
+                break;
+            }
+            cliques = Vec::from_iter(new_cliques);
+        }
+
+        Ok(cliques[0].join(","))
     }
 }
