@@ -33,24 +33,22 @@ impl InputFormat {
             ]
         })
     }
-    fn compute_adj(&self) -> HashMap<String, HashSet<String>> {
+    fn compute_adj(&self) -> HashMap<&str, HashSet<&str>> {
         let mut adj = HashMap::new();
 
         for (u, v) in self.all_edges() {
-            adj.entry(u.to_string())
-                .or_insert_with(HashSet::new)
-                .insert(v.to_string());
+            adj.entry(u).or_insert_with(HashSet::new).insert(v);
         }
         adj
     }
-    fn clique_3<'a>(&'a self, adj: &'a HashMap<String, HashSet<String>>) -> HashSet<Vec<&'a str>> {
+    fn clique_3<'a>(&'a self, adj: &'a HashMap<&str, HashSet<&str>>) -> HashSet<Vec<&'a str>> {
         self.all_edges()
             .flat_map(move |(u, v)| {
                 adj[u].intersection(&adj[v]).map(move |t| {
                     let mut r = HashSet::with_capacity(3);
                     r.insert(u);
                     r.insert(v);
-                    r.insert(t.as_str());
+                    r.insert(t);
                     r
                 })
             })
@@ -77,15 +75,6 @@ impl DaySolution for Solution {
     fn solve_2(input: &InputFormat) -> MyResult<impl Debug + 'static> {
         let adj = input.compute_adj();
         let cliques = Vec::from_iter(input.clique_3(&adj));
-        let adj = adj
-            .iter()
-            .map(|(u, vs)| {
-                (
-                    u.as_str(),
-                    vs.iter().map(String::as_str).collect::<HashSet<_>>(),
-                )
-            })
-            .collect::<HashMap<_, _>>();
         let mut cliques = Vec::from_iter(cliques);
         loop {
             let mut new_cliques = HashSet::new();
