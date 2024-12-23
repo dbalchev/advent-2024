@@ -156,14 +156,14 @@ fn trim(result: Vec<String>, _should_print: bool) -> Vec<String> {
     let min = result.iter().map(String::len).min().unwrap();
     let threshold = 5;
     // let initial_size = result.len();
-    let result = result
-        .into_iter()
-        .filter(|s| s.len() <= min + threshold)
-        .collect::<Vec<_>>();
+
     // if should_print {
     //     println!("trim {} to {}", initial_size, result.len());
     // }
     result
+        .into_iter()
+        .filter(|s| s.len() <= min + threshold)
+        .collect::<Vec<_>>()
 }
 
 fn singular_paths<K: Eq + Hash + Clone, T: Clone>(
@@ -200,7 +200,7 @@ fn general_solve(input: &InputFormat, n_indirections: i32) -> i64 {
     for code in &input.instructions {
         sum += singular_dpad_paths
             .iter()
-            .map(|dpad_paths| dpad_solve(n_indirections, &numpad_paths, &dpad_paths, code))
+            .map(|dpad_paths| dpad_solve(n_indirections, &numpad_paths, dpad_paths, code))
             .min()
             .unwrap();
     }
@@ -211,9 +211,9 @@ fn dpad_solve(
     n_indirections: i32,
     numpad_paths: &HashMap<(char, char), Vec<String>>,
     dpad_paths: &HashMap<(char, char), Vec<String>>,
-    code: &String,
+    code: &str,
 ) -> i64 {
-    let numpad_path = trim(translate_path(&[code.clone()], numpad_paths), true);
+    let numpad_path = trim(translate_path(&[code.to_string()], numpad_paths), true);
     let resulting_paths = numpad_path;
     let mut resulting_paths = resulting_paths
         .into_iter()
