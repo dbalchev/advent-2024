@@ -1,9 +1,6 @@
 use std::{
-    borrow::BorrowMut,
-    cell::RefCell,
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fmt::Debug,
-    sync::{Arc, Weak},
 };
 
 use aoc_utils::{formatted_struct, make_recursive_fn, DaySolution, MyResult};
@@ -18,7 +15,7 @@ formatted_struct! {
 }
 
 formatted_struct! {
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Gate {
         lh: String,
         " ",
@@ -42,35 +39,6 @@ formatted_struct! {
 }
 
 pub struct Solution;
-
-// let values = Arc::new_cyclic(
-//     |values_ref: &Weak<RefCell<HashMap<&str, Box<dyn FnMut() -> i32>>>>| {
-//         RefCell::new({
-//             let mut values: HashMap<&str, Box<dyn FnMut() -> i32>> = HashMap::new();
-//             for param in &input.params {
-//                 let old = values.insert(param.key.as_str(), Box::new(|| param.value));
-//                 assert!(old.is_none());
-//             }
-//             for gate in &input.gates {
-//                 let mut cached = None;
-//                 let values_ref = values_ref.clone();
-//                 let eval = move || -> i32 {
-//                     *cached.get_or_insert_with(|| {
-//                         let rc = values_ref.upgrade().unwrap();
-//                         let mut values = rc.try_borrow_mut().unwrap();
-//                         let lh = values.get_mut(gate.lh.as_str()).unwrap()();
-//                         let rh = values.get_mut(gate.rh.as_str()).unwrap()();
-//                         lh + rh
-//                     })
-//                 };
-//                 let old = values.insert(&gate.output, Box::new(eval));
-//                 assert!(old.is_none());
-//             }
-//             values
-//         })
-//     },
-// );
-// for (key, value_fn) in values.try_borrow_mut().unwrap() {}
 
 impl DaySolution for Solution {
     type InputFormat = InputFormat;
@@ -116,6 +84,137 @@ impl DaySolution for Solution {
             .collect::<Vec<_>>()
             .join("");
         Ok(i64::from_str_radix(&bin_result, 2))
+    }
+    fn solve_2(input: &Self::InputFormat) -> MyResult<impl Debug + 'static> {
+        let mut current_gates = input.gates.clone();
+        let mut swaps = Vec::new();
+        let add_swap =
+            |a: String, b: String, current_gates: &mut Vec<Gate>, swaps: &mut Vec<String>| {
+                *current_gates = current_gates
+                    .into_iter()
+                    .map(|g| {
+                        if g.output == a {
+                            Gate {
+                                output: b.clone(),
+                                ..g.clone()
+                            }
+                        } else if g.output == b {
+                            Gate {
+                                output: a.clone(),
+                                ..g.clone()
+                            }
+                        } else {
+                            g.clone()
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                swaps.extend([a, b]);
+            };
+        'solve_loop: loop {
+            macro_rules! query_element {
+                ($g:ident, param=$v:expr) => {
+                    [$g.lh.as_str(), $g.rh.as_str()].contains(&$v)
+                };
+                ($g:ident, $k:ident=$v:expr) => {
+                    ($g.$k.as_str() == $v)
+                };
+            }
+            macro_rules! query_gates {
+                (select $($r:ident),+ where $($k:tt=$v:expr),*) => {
+                    current_gates.iter().filter(|&g| $(query_element!(g,$k=$v))&&+).flat_map(|g| [$(g.$r.as_str()),+]).collect::<HashSet<_>>()
+                };
+            }
+            let z_gates = &input
+                .gates
+                .iter()
+                .map(|g| g.output.as_str())
+                .filter(|name| name.starts_with('z'))
+                .collect::<Vec<_>>();
+
+            assert_eq!(
+                Vec::from_iter(
+                    query_gates!(select output where param = "x00", param="y00", op = "XOR")
+                ),
+                vec!["z00"]
+            );
+            let mut previous_carry_name = "";
+            for i in 1..(z_gates.len() - 1) {
+                let x = format!("x{:02}", i);
+                let x = x.as_str();
+                let y = format!("y{:02}", i);
+                let y = y.as_str();
+                let z = format!("z{:02}", i);
+
+                let xor_inner_1 = [
+                    query_gates!(select output where param=x, op="XOR"),
+                    query_gates!(select output where param=y, op="XOR"),
+                ]
+                .into_iter()
+                .flatten()
+                .collect::<HashSet<_>>();
+                let xor_inner_2 = query_gates!(select lh, rh where output=z, op="XOR");
+                previous_carry_name = if xor_inner_1.len() == 1 {
+                    let xor_inner_2_candidates = query_gates!(select output where param=xor_inner_1.iter().next().unwrap(), op="XOR");
+
+                    if xor_inner_2.len() != 2 {
+                        assert_eq!(
+                            xor_inner_2_candidates.len(),
+                            1,
+                            "{:?}",
+                            xor_inner_2_candidates
+                        );
+                        println!(
+                            "{} is swapped with {:?} [xor_inner_2 = {:?}]",
+                            z, xor_inner_2_candidates, xor_inner_2
+                        );
+                        let z = z.to_string();
+                        let new_z = xor_inner_2_candidates.iter().next().unwrap().to_string();
+                        add_swap(z, new_z, &mut current_gates, &mut swaps);
+                        continue 'solve_loop;
+                    } else {
+                        assert_eq!(xor_inner_2.len(), 2, "{:?} {:?}", xor_inner_1, xor_inner_2);
+                        let diff = xor_inner_2.difference(&xor_inner_1).collect::<Vec<_>>();
+                        let xor_inner_3 = query_gates!(select output where param=xor_inner_1.iter().next().unwrap(), op="XOR");
+                        if diff.len() != 1 {
+                            let xor_inner_2 = Vec::from_iter(xor_inner_2.clone());
+                            let op0 = *query_gates!(select op where output=xor_inner_2[0])
+                                .iter()
+                                .next()
+                                .unwrap();
+                            assert!(["OR", "AND"].contains(&op0));
+                            let not_carry = if op0 == "OR" {
+                                xor_inner_2[1]
+                            } else {
+                                xor_inner_2[0]
+                            };
+                            let xor_node = xor_inner_1.iter().next().unwrap().to_string();
+                            println!(
+                                "{} is swapped with {} [xor_inner = [{:?}, {:?}],]",
+                                xor_node, not_carry, xor_inner_1, xor_inner_2,
+                            );
+
+                            add_swap(
+                                xor_node,
+                                not_carry.to_string(),
+                                &mut current_gates,
+                                &mut swaps,
+                            );
+                            continue 'solve_loop;
+                        }
+                        *diff[0]
+                    }
+                } else {
+                    println!("{:?} {:?}", xor_inner_1, xor_inner_2);
+                    panic!()
+                };
+            }
+
+            println!("{:?}", z_gates.len());
+
+            break;
+        }
+        swaps.sort();
+        Ok(swaps.join(","))
     }
     fn preferred_sample_input() -> i32 {
         1
