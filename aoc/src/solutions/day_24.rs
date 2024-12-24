@@ -91,7 +91,7 @@ impl DaySolution for Solution {
         let add_swap =
             |a: String, b: String, current_gates: &mut Vec<Gate>, swaps: &mut Vec<String>| {
                 *current_gates = current_gates
-                    .into_iter()
+                    .iter_mut()
                     .map(|g| {
                         if g.output == a {
                             Gate {
@@ -137,7 +137,6 @@ impl DaySolution for Solution {
                 ),
                 vec!["z00"]
             );
-            let mut previous_carry_name = "";
             for i in 1..(z_gates.len() - 1) {
                 let x = format!("x{:02}", i);
                 let x = x.as_str();
@@ -153,7 +152,7 @@ impl DaySolution for Solution {
                 .flatten()
                 .collect::<HashSet<_>>();
                 let xor_inner_2 = query_gates!(select lh, rh where output=z, op="XOR");
-                previous_carry_name = if xor_inner_1.len() == 1 {
+                if xor_inner_1.len() == 1 {
                     let xor_inner_2_candidates = query_gates!(select output where param=xor_inner_1.iter().next().unwrap(), op="XOR");
 
                     if xor_inner_2.len() != 2 {
@@ -174,7 +173,6 @@ impl DaySolution for Solution {
                     } else {
                         assert_eq!(xor_inner_2.len(), 2, "{:?} {:?}", xor_inner_1, xor_inner_2);
                         let diff = xor_inner_2.difference(&xor_inner_1).collect::<Vec<_>>();
-                        let xor_inner_3 = query_gates!(select output where param=xor_inner_1.iter().next().unwrap(), op="XOR");
                         if diff.len() != 1 {
                             let xor_inner_2 = Vec::from_iter(xor_inner_2.clone());
                             let op0 = *query_gates!(select op where output=xor_inner_2[0])
@@ -201,7 +199,6 @@ impl DaySolution for Solution {
                             );
                             continue 'solve_loop;
                         }
-                        *diff[0]
                     }
                 } else {
                     println!("{:?} {:?}", xor_inner_1, xor_inner_2);
