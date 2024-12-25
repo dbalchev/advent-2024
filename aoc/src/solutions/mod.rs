@@ -26,4 +26,5 @@ register_days! {
     day_22,
     day_23,
     day_24,
+    day_25,
 }
