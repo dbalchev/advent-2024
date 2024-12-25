@@ -5,9 +5,9 @@ use aoc_utils::{formatted_struct, make_recursive_fn, DaySolution, MyResult};
 formatted_struct! {
     #[derive(Debug)]
     pub struct ButtonMoves {
-        "X+",
+        "X\\+",
         x_delta: i64,
-        ", Y+",
+        ", Y\\+",
         y_delta:i64,
         "\n",
     }
