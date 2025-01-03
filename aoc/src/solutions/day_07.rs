@@ -25,11 +25,10 @@ fn expectation_after_concatenation(expectation: i64, operand: i64) -> Option<i64
         let mut result: Vec<i64> = vec![1];
         loop {
             let &last = result.last().expect("it's never empty");
-            if let Some(next) = last.checked_mul(10) {
-                result.push(next);
-            } else {
+            let Some(next) = last.checked_mul(10) else {
                 break;
-            }
+            };
+            result.push(next);
         }
         result
     });

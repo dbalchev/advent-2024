@@ -14,11 +14,10 @@ fn to_disk_map(input: &str) -> Vec<Option<i32>> {
         for _ in 0..file_blocks {
             result.push(Some(next_id));
         }
-        let empty_blocks = if let Some(empty_blocks) = char_iterator.next() {
-            empty_blocks as i32 - ZERO
-        } else {
+        let Some(empty_blocks) = char_iterator.next() else {
             break;
         };
+        let empty_blocks = empty_blocks as i32 - ZERO;
 
         for _ in 0..empty_blocks {
             result.push(None);
@@ -84,11 +83,10 @@ fn to_disk_map_2(input: &str) -> Vec<DiskChunk> {
             id: next_id,
             size: file_blocks,
         });
-        let empty_blocks = if let Some(empty_blocks) = char_iterator.next() {
-            empty_blocks as i32 - ZERO
-        } else {
+        let Some(empty_blocks) = char_iterator.next() else {
             break;
         };
+        let empty_blocks = empty_blocks as i32 - ZERO;
 
         result.push(DiskChunk::Empty { size: empty_blocks });
         next_id += 1;
