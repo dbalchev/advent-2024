@@ -98,12 +98,14 @@ fn to_disk_map_2(input: &str) -> Vec<DiskChunk> {
 
 fn compact_2(mut disk_map: Vec<DiskChunk>) -> Vec<DiskChunk> {
     for current_block_index in (0..disk_map.len()).rev() {
-        let (current_block_id, current_block_size) = match disk_map[current_block_index] {
-            DiskChunk::Empty { .. } => continue,
-            DiskChunk::File { id, size } => (id, size),
+        let DiskChunk::File {
+            id: current_block_id,
+            size: current_block_size,
+        } = disk_map[current_block_index]
+        else {
+            continue;
         };
-        let (space_index, space_size) = if let Some((space_index, space_size)) = disk_map
-            [0..current_block_index]
+        let Some((space_index, space_size)) = disk_map[0..current_block_index]
             .iter()
             .enumerate()
             .filter_map(|(i, candidate_block)| {
@@ -114,9 +116,7 @@ fn compact_2(mut disk_map: Vec<DiskChunk>) -> Vec<DiskChunk> {
                 }
             })
             .find(|(_, empty_size)| *empty_size >= current_block_size)
-        {
-            (space_index, space_size)
-        } else {
+        else {
             continue;
         };
         if space_size == current_block_size {
@@ -127,11 +127,10 @@ fn compact_2(mut disk_map: Vec<DiskChunk>) -> Vec<DiskChunk> {
             size: current_block_size,
         };
         // no need to compcat disk_map after current_block_index
-        if let DiskChunk::Empty { size } = &mut disk_map[space_index] {
-            *size -= current_block_size;
-        } else {
+        let DiskChunk::Empty { size } = &mut disk_map[space_index] else {
             panic!("should be empty");
-        }
+        };
+        *size -= current_block_size;
         disk_map.insert(
             space_index,
             DiskChunk::File {

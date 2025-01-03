@@ -41,21 +41,18 @@ impl Report {
         bad_level_index(&self.levels).is_none()
     }
     fn is_tolerably_safe(&self) -> bool {
-        let first_bad_level = bad_level_index(&self.levels);
-        match first_bad_level {
-            None => true,
-            Some(bad_index) => {
-                let removal_candidates = [0, bad_index, bad_index + 1];
-                for i in removal_candidates {
-                    let mut new_report_levels = self.levels.clone();
-                    new_report_levels.remove(i);
-                    if bad_level_index(&new_report_levels).is_none() {
-                        return true;
-                    }
-                }
-                false
+        let Some(bad_index) = bad_level_index(&self.levels) else {
+            return true;
+        };
+        let removal_candidates = [0, bad_index, bad_index + 1];
+        for i in removal_candidates {
+            let mut new_report_levels = self.levels.clone();
+            new_report_levels.remove(i);
+            if bad_level_index(&new_report_levels).is_none() {
+                return true;
             }
         }
+        false
     }
 }
 

@@ -35,9 +35,8 @@ impl Schematic {
 }
 
 fn pairs<T>(l: &[T]) -> Vec<(&T, &T)> {
-    let (x, xs) = match l.split_first() {
-        None => return vec![],
-        Some((x, xs)) => (x, xs),
+    let Some((x, xs)) = l.split_first() else {
+        return vec![];
     };
     let mut rest = pairs(xs);
     rest.extend(xs.iter().map(|y| (x, y)));

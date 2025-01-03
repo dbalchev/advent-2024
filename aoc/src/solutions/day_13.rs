@@ -69,7 +69,7 @@ impl ClawMachine {
         self.math_solve(self.prize_x, self.prize_y)
     }
     fn math_solve_2(&self) -> Option<i64> {
-        const DELTA: i64 = 10000000000000;
+        const DELTA: i64 = 10_000_000_000_000;
         self.math_solve(DELTA + self.prize_x, DELTA + self.prize_y)
     }
     fn math_solve(&self, target_x: i64, target_y: i64) -> Option<i64> {
